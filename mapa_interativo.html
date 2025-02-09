@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    
+        <script>
+            L_NO_TOUCH = false;
+            L_DISABLE_3D = false;
+        </script>
+    
+    <style>html, body {width: 100%;height: 100%;margin: 0;padding: 0;}</style>
+    <style>#map {position:absolute;top:0;bottom:0;right:0;left:0;}</style>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/python-visualization/folium/folium/templates/leaflet.awesome.rotate.min.css"/>
+    
+            <meta name="viewport" content="width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <style>
+                #map_8bb4e9414978bff5f84f14a73b9611d3 {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+                .leaflet-container { font-size: 1rem; }
+            </style>
+        
+</head>
+<body>
+    
+    
+    <!DOCTYPE html>
+    <html lang="pt-BR">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Mapa Interativo</title>
+        <style>
+          /* Estilo para o formulário de login */
+          #login-overlay {
+              position: fixed;
+              top: 0;
+              left: 0;
+              width: 100%;
+              height: 100%;
+              background-color: rgba(0, 0, 0, 0.8);
+              z-index: 9999;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+          }
+          #login-box {
+              background-color: white;
+              padding: 20px;
+              border-radius: 10px;
+              text-align: center;
+          }
+          #login-box input {
+              margin: 10px 0;
+              padding: 10px;
+              width: 80%;
+          }
+          #login-box button {
+              padding: 10px 20px;
+              background-color: #4CAF50;
+              color: white;
+              border: none;
+              border-radius: 5px;
+              cursor: pointer;
+          }
+          #login-box button:hover {
+              background-color: #45a049;
+          }
+          #login-error {
+              color: red;
+              margin-top: 10px;
+          }
+
+          /* Estilo para os painéis do mapa */
+          #acervo-list {
+              position: fixed;
+              top: 10px;
+              left: 10px;
+              width: 350px;
+              height: 90%;
+              overflow-y: auto;
+              background-color: white;
+              z-index: 1000;
+              padding: 10px;
+              border: 2px solid black;
+              font-size: 18px;
+              display: none;
+          }
+          #acervo-detail {
+              position: fixed;
+              top: 10px;
+              right: 10px;
+              width: 50%;
+              height: 80%;
+              overflow-y: auto;
+              background-color: white;
+              z-index: 2000;
+              padding: 10px;
+              border: 4px solid black;
+              font-size: 18px;
+              display: none;
+          }
+          #acervo-detail iframe {
+              width: 100%;
+              height: 600px;
+              border: none;
+          }
+          .destaque {
+              font-size: 24px;
+              font-weight: bold;
+              color: #2d2d2d;
+              text-align: center;
+              margin-bottom: 20px;
+          }
+        </style>
+    </head>
+    <body>
+        <!-- Overlay de login -->
+        <div id="login-overlay">
+            <div id="login-box">
+                <h2>Login</h2>
+                <input type="text" id="username" placeholder="Usuário">
+                <input type="password" id="password" placeholder="Senha">
+                <button onclick="verificarLogin()">Entrar</button>
+                <div id="login-error"></div>
+            </div>
+        </div>
+
+        <!-- Painel da lista de acervos -->
+        <div id="acervo-list">
+          <div class="destaque">Olá Usuário! Clique em qualquer região no mapa para carregar a lista de instituições!</div>
+          <p><span style="font-size: 18px;">Última atualização: FEV.2025.</span></p>
+        </div>
+
+        <!-- Painel de detalhes do acervo -->
+        <div id="acervo-detail">
+          <div class="destaque">Ao passar o mouse sobre o nome da instituição, os detalhes serão exibidos aqui! Mas atenção: alguns sites possuem proteções de segurança.</div>
+          <p><span style="font-size: 18px;">Caso o site não seja exibido, clique em VISITAR SITE.</span></p>
+          <p><span style="font-size: 18px;">Última atualização: FEV.2025.</span></p>
+        </div>
+
+        <!-- Mapa -->
+        <div id="map" style="display: none;"></div>
+
+        <script>
+        // Dados dos acervos, injetados a partir do Python
+        var acervos_data = {"Reino Unido": [{"nome": "NationalFilm and Television Archive (UK)", "descricao": "O BFI cuida de uma das maiores e mais importantes cole\u00e7\u00f5es de filmes e televis\u00e3o do mundo. Suas equipes de especialistas garantem que a cole\u00e7\u00e3o seja preservada e desenvolvida para as gera\u00e7\u00f5es futuras e amplamente acess\u00edvel ao p\u00fablico de hoje.", "site": "http://www.bfi.org.uk/archive-collections"}, {"nome": "BFI Player", "descricao": "O BFI Player \u00e9 um servi\u00e7o de v\u00eddeo sob demanda do British Film Institute, que transmite filmes aclamados, marcantes e de arquivo. Eles est\u00e3o dispon\u00edveis para aluguel, assinatura ou gratuitamente. A coloca\u00e7\u00e3o e disponibilidade dos filmes depende de acordos de direitos com licenciadores.Queremos ajudar os usu\u00e1rios a ver algo diferente - por isso nos concentramos em filmes independentes brit\u00e2nicos e europeus, bem como em lan\u00e7amentos internacionais. N\u00f3s refletimos a miss\u00e3o cultural mais ampla do BFI, complementando sua programa\u00e7\u00e3o sazonal de nossos espa\u00e7os no Reino Unido, distribui\u00e7\u00e3o de filmes e editoras de DVD/Blu-ray.Sobre o BFI . Fundado em 1933, o British Film Institute (BFI) \u00e9 uma institui\u00e7\u00e3o de caridade registrada e regida pela Royal Charter.", "site": "https://player.bfi.org.uk/free"}, {"nome": "Europeana 1914-1918 - 1\u00aa Guerra Mundial", "descricao": "Conhe\u00e7a hist\u00f3rias, filmes e material hist\u00f3rico sobre a Primeira Guerra Mundial e contribua com as suas pr\u00f3prias mem\u00f3rias de fam\u00edlia. A Europeana 1914-1918 integra recursos de bibliotecas e arquivos de todo o mundo com mem\u00f3rias e recorda\u00e7\u00f5es de fam\u00edlias de toda a Europa.", "site": "http://www.europeana1914-1918.eu/pt/explore"}, {"nome": "Royal Geographical Society (com o Instituto de Ge\u00f3grafos Brit\u00e2nicos)", "descricao": "Fundada em 1830, somos a sociedade cient\u00edfica e o corpo profissional de geografia do Reino Unido. Descubra nossa hist\u00f3ria e descubra como nosso trabalho e pessoas contribuem para o avan\u00e7o da geografia em todo o mundo.Somos uma das cole\u00e7\u00f5es geogr\u00e1ficas maiores e mais diversificadas do mundo /Hist\u00f3rias de explora\u00e7\u00e3o e viagens \n Imagens do passado/ Membro do BAPLA", "site": "https://images.rgs.org/"}, {"nome": "framepool", "descricao": "Alguns dos momentos mais ic\u00f4nicos da hist\u00f3ria remasterizados digitalmente \n Fornecemos not\u00edcias especializadas e pesquisa de filmagens hist\u00f3ricas, digitaliza\u00e7\u00e3o e libera\u00e7\u00e3o de direitos autorais. Nossa biblioteca de estoque ostenta mais de um milh\u00e3o de clipes de filmagens de estoque, incluindo mais de 3.000 horas de filmagens hist\u00f3ricas premium remasterizadas.", "site": "https://framepool.com/"}, {"nome": "Nimia", "descricao": "Licen\u00e7a de m\u00eddia de not\u00edcias de manchetes, filmes hist\u00f3ricos, clipes do YouTube, Instagram Reels... Licen\u00e7a de qualquer ativo de qualquer lugar", "site": "https://nimia.com/marketplace/"}, {"nome": "Focal International", "descricao": "A FOCAL International (Federa\u00e7\u00e3o de Bibliotecas Audiovisuais Comerciais) \u00e9 uma associa\u00e7\u00e3o comercial especializada, profissional e sem fins lucrativos, formada em 1985. Ela est\u00e1 totalmente estabelecida como uma das principais vozes do setor, representando bibliotecas de filmagens e conte\u00fado em mais de 30 pa\u00edses, produtores de arquivos, pesquisadores, consultores e empresas de instala\u00e7\u00f5es.", "site": "https://focalint.org/"}, {"nome": "Footage Farm", "descricao": "Footage Farm \u00e9 uma premiada biblioteca de arquivo especializada em dom\u00ednio p\u00fablico. Desde 2001, nosso objetivo sempre foi ajudar cineastas a obter acesso ao material da melhor qualidade a pre\u00e7os acess\u00edveis.", "site": "https://footagefarm.com/"}, {"nome": "Abcnewsvsource", "descricao": "Nosso conte\u00fado \u00e9 propriedade da ABC e de outros detentores de licen\u00e7as. N\u00f3s disponibilizamos esse conte\u00fado para voc\u00ea para fins de pesquisa gratuitamente e, em troca, exigimos que voc\u00ea aceite os termos e condi\u00e7\u00f5es para acessar nosso conte\u00fado.", "site": "https://www.abcnewsvsource.com/search"}, {"nome": "Buyoutfootage", "descricao": "A Buyout Footage fornece uma sele\u00e7\u00e3o diversificada de filmagens de filme e v\u00eddeo aut\u00eanticas e de alta qualidade, adequadas para m\u00faltiplas aplica\u00e7\u00f5es. Nossa cole\u00e7\u00e3o abrange conte\u00fado exclusivo e propriet\u00e1rio, juntamente com uma ampla variedade de filmagens de dom\u00ednio p\u00fablico, oferecendo aos nossos clientes acesso inigual\u00e1vel a materiais distintos e historicamente significativos.", "site": "https://www.buyoutfootage.com/"}, {"nome": "Criticalpast", "descricao": "Bem-vindo ao CriticalPast.\n Uma das maiores cole\u00e7\u00f5es de filmagens de arquivo livres de royalties do mundo. Todas com qualidade de transmiss\u00e3o e dispon\u00edveis para download imediato em v\u00e1rias taxas de quadros HD e codecs, incluindo screeners de resolu\u00e7\u00e3o total. Imagens e filmagens de estoque vintage licenciadas mundialmente, em perpetuidade, para todas as m\u00eddias. O licenciamento somente digital tamb\u00e9m est\u00e1 dispon\u00edvel. A CriticalPast atende \u00e0s necessidades de filmagens hist\u00f3ricas de profissionais de not\u00edcias, televis\u00e3o e cinema, e criadores de conte\u00fado em todo o mundo, 24 horas por dia.", "site": "https://www.criticalpast.com/"}, {"nome": "History Comes To Life", "descricao": "History Comes To Life foi criado em 2012 para dar continuidade \u00e0 programa\u00e7\u00e3o do Historical Perspectives For Children, oferecido na \u00e1rea metropolitana de Twin Cities h\u00e1 mais de vinte anos. Atores e atrizes locais retratam essas pessoas extraordin\u00e1rias da hist\u00f3ria e compartilham suas hist\u00f3rias, abrangendo da inf\u00e2ncia \u00e0 vida adulta, para que as crian\u00e7as possam compartilhar os eventos que moldaram suas vidas e o processo pelo qual trabalharam para atingir seus objetivos.", "site": "https://www.historycomestolife.net/about"}, {"nome": "Kinolibrary", "descricao": "As filmagens da Kinolibrary foram apresentadas em muitas produ\u00e7\u00f5es aclamadas, incluindo Moonage Daydream, o longa indicado ao Bafta Living, Fight the Power: How Hip Hop Changed the World e o filme do VMA Awards de Madonna. Nossos clientes incluem BBC, Amazon, Netflix, Tate, Apple, Left/Right, Sony, Nutopia, Channel 4, Mass Appeal, Sky e Supreme - entre muitos outros\n Temos mais de 20.000 horas de filmagens em nossas cole\u00e7\u00f5es, com uma grande quantidade dispon\u00edvel apenas por meio do Kinolibrary. Apenas alguns desses clipes est\u00e3o online, ent\u00e3o use nosso servi\u00e7o de pesquisa gratuito para acessar nossas cole\u00e7\u00f5es completas ou para ver mais clipes do Kino que voc\u00ea encontrou no YouTube.\n Nosso servi\u00e7o \u00e9 r\u00e1pido, flex\u00edvel e amig\u00e1vel, fornecendo acesso a uma riqueza de \u00f3timo conte\u00fado rapidamente. Por que n\u00e3o entrar em contato conosco para ver o que podemos fazer?", "site": "https://www.kinolibrary.com/"}, {"nome": "MyFOOTAGE", "descricao": "MyFOOTAGE \u00e9 um fornecedor de imagens de arquivo para cineastas para televis\u00e3o, produ\u00e7\u00f5es cinematogr\u00e1ficas e publicidade.", "site": "https://www.myfootage.com/"}, {"nome": "My old film", "descricao": "Daniele Carrer \u00c9 hora de comprar seu ingresso para a m\u00e1quina do tempo\n Milh\u00f5es de pessoas visitam meu canal do YouTube todo m\u00eas. Neste site, voc\u00ea pode assistir aos mesmos v\u00eddeos sem marcas d'\u00e1gua e an\u00fancios , e com uma assinatura anual, voc\u00ea pode acessar horas de v\u00eddeos exclusivos in\u00e9ditos.\n Tenha acesso imediato a uma \u00e1rea privada com horas de filmagens de mais de 2.000 filmes caseiros hist\u00f3ricos.Assista em qualquer lugar: no seu computador, smartphone, tablet ou Smart TV.Descubra como era o mundo entre as d\u00e9cadas de 1930 e 1990 nos EUA, M\u00e9xico, Brasil, Reino Unido, Fran\u00e7a, Canad\u00e1, It\u00e1lia, Espanha, Holanda e dezenas de outros pa\u00edses. Assista \u00e0 vida cotidiana de lugares que n\u00e3o existem mais, como Berlim Oriental e Ocidental, URSS, Iugosl\u00e1via, \u00c1frica do Sul durante o Apartheid, China antes do capitalismo, Ir\u00e3 antes da Revolu\u00e7\u00e3o Cultural e muito mais.", "site": "https://myoldfilm.com/"}, {"nome": "Framepool", "descricao": "Fornecemos not\u00edcias especializadas e pesquisa de filmagens hist\u00f3ricas, digitaliza\u00e7\u00e3o e libera\u00e7\u00e3o de direitos autorais. Nossa biblioteca de estoque ostenta mais de um milh\u00e3o de clipes de filmagens de estoque, incluindo mais de 3.000 horas de filmagens hist\u00f3ricas premium remasterizadas. Framepool se juntou \u00e0 Nimia.A Nimia est\u00e1 migrando o arquivo de filmagens de stock da Framepool para o Nimia Marketplace nas pr\u00f3ximas duas semanas. Voc\u00ea pode come\u00e7ar a encontrar parte da rica cole\u00e7\u00e3o da Framepool agora, junto com filmagens criativas e de not\u00edcias premiadas em app.nimia.com. Prevemos concluir a migra\u00e7\u00e3o at\u00e9 a segunda semana de mar\u00e7o. Se precisar de ajuda para encontrar alguma de suas filmagens favoritas da Framepool, entre em contato com seu representante habitual da Framepool.", "site": "https://framepool.com/"}, {"nome": "O British Path\u00e9", "descricao": "O British Path\u00e9 \u00e9 considerado o melhor arquivo de cinejornais do mundo. Abrangendo os anos de 1896 a 1978, suas cole\u00e7\u00f5es incluem filmagens de todo o mundo de grandes eventos, rostos famosos, tend\u00eancias da moda, viagens, ci\u00eancia e cultura. \u00c9 um recurso inestim\u00e1vel para emissoras, produtores de document\u00e1rios, curadores de museus e pesquisadores em todo o mundo. O arquivo inteiro de 85.000 filmes est\u00e1 dispon\u00edvel para visualiza\u00e7\u00e3o gratuita no site do British Path\u00e9, enquanto licen\u00e7as podem ser adquiridas para outros usos. A British Path\u00e9 tamb\u00e9m representa conte\u00fado de organiza\u00e7\u00f5es parceiras, como a cole\u00e7\u00e3o hist\u00f3rica da Reuters, que inclui mais de 130.000 itens datados de 1910 at\u00e9 o final de 1984.", "site": "https://www.britishpathe.com/"}, {"nome": "BBC", "descricao": "A British Broadcasting Corporation (Corpora\u00e7\u00e3o Brit\u00e2nica de Radiodifus\u00e3o, mais conhecida pela sigla BBC) \u00e9 uma corpora\u00e7\u00e3o p\u00fablica de r\u00e1dio e televis\u00e3o do Reino Unido fundada em 1922.", "site": "https://www.bbc.com/topics/c01yxyz46myt"}], "It\u00e1lia": [{"nome": "Archivioaudiovisivo del movimento operaio e democratico (Italien)", "descricao": "O arquivo audiovisual do movimento oper\u00e1rio e democr\u00e1tico (AAMOD) foi fundado em 1979 como uma associa\u00e7\u00e3o, com o nome de Arquivo Hist\u00f3rico Audiovisual do Movimento Oper\u00e1rio (ASAMO), e herda o patrim\u00f4nio cinematogr\u00e1fico do Partido Comunista Italiano e da Unitelefilm - uma produtora de filmes relacionada ao PCI. O primeiro presidente do arquivo ser\u00e1, durante alguns anos, Cesare Zavattini.", "site": "http://patrimonio.aamod.it/aamod-web/"}, {"nome": "Archivioluce", "descricao": "A Cinecitt\u00e0 \u00e9 a empresa p\u00fablica que funciona como bra\u00e7o operacional do Minist\u00e9rio da Cultura, e uma das principais entidades do setor cinematogr\u00e1fico, com uma variedade de compromissos e atividades que se traduzem na miss\u00e3o mais ampla de apoiar a ind\u00fastria cinematogr\u00e1fica e audiovisual italiana.", "site": "https://www.archivioluce.com/?s=Pina+Bausch+&submit=Search"}], "Fran\u00e7a": [{"nome": "Institut national de l'audiovisuel", "descricao": "Instituto Nacional Audiovisual ' ; abreviatura INA ) \u00e9 um reposit\u00f3rio de todos os arquivos audiovisuais de r\u00e1dio e televis\u00e3o franceses . Al\u00e9m disso, fornece acesso gratuito a arquivos de pa\u00edses como Afeganist\u00e3o e Camboja .Tem sua sede em Bry-sur-Marne .", "site": "https://www.ina.fr/"}, {"nome": "Institut national de l'audiovisuel media ", "descricao": "Instituto Nacional Audiovisual ' ; abreviatura INA ) \u00e9 um reposit\u00f3rio de todos os arquivos audiovisuais de r\u00e1dio e televis\u00e3o franceses . O Inamediapro \u00e9 uma base de dados paga de acesso a fontes do INA, destinada a profissionais. O site Ina.fr apresenta uma pequena amostra para o p\u00fablico em geral. J\u00e1 a Inath\u00e8que \u00e9 um local de consulta reservado a pesquisadores, institucionais ou n\u00e3o", "site": "https://www.inamediapro.com"}, {"nome": "Atelier des Archives", "descricao": "A oficina de arquivos cont\u00e9m milhares de documentos audiovisuais ao servi\u00e7o dos seus projetos documentais. \n Criado em 2004, o Atelier des Archives reuniu milhares de horas de arquivos audiovisuais in\u00e9ditos Alguns exemplos em nosso canal \"Best of\" Descubra no Youtube Mais de um s\u00e9culo de imagens hist\u00f3ricas Uma impressionante cole\u00e7\u00e3o de imagens de \u201cDom\u00ednio P\u00fablico\u201d sobre os principais eventos do s\u00e9culo XX dispon\u00edveis para seus projetos a pre\u00e7os preferenciais. Descubra no Youtube", "site": "http://www.atelierdesarchives.com"}, {"nome": "Gaumont-Pathe Archives", "descricao": "GP Archives \u00e9 um departamento da Gaumont e um dos maiores arquivos de filmes da Fran\u00e7a. \u00c9 agora o principal banco de imagens franc\u00eas que ilustra a hist\u00f3ria dos s\u00e9culos XX e XXI. Foi fundado como Gaumont Path\u00e9 Archives em 2003 ap\u00f3s a fus\u00e3o dos departamentos de arquivo dos dois est\u00fadios de cinema mais antigos do mundo, Gaumont e Path\u00e9 . Foi renomeado GP Archives em 2019.A hist\u00f3ria do s\u00e9culo XX, as novidades do s\u00e9culo XXI. 250 mil documentos, 17 mil document\u00e1rios, 14 mil horas de arquivo Hist\u00f3ria, sociedade, pol\u00edtica, cultura, esporte, meio ambiente", "site": "https://gaumontpathearchives.com/"}, {"nome": "Reuters", "descricao": "O Screenocean fornece acesso inigual\u00e1vel a conte\u00fado exclusivo e de qualidade de todo o mundo, capturado de 1896 at\u00e9 os dias atuais. Descubra filmagens raras e inspiradoras, incluindo notici\u00e1rios hist\u00f3ricos importantes, programas de entretenimento e mais de 20 milh\u00f5es de imagens ic\u00f4nicas. Abrangendo 3 s\u00e9culos, ajudamos a dar vida \u00e0s suas hist\u00f3rias e projetos. A biblioteca de filmagens do Screenocean inclui clipes do Reuters News Archive, Channel 4, Channel 5, Warner Bros Television Productions UK, Clips & Footage e Cover Images. Pesquis\u00e1vel 24 horas por dia, 7 dias por semana, obtenha filmagens para TV, cinema, educa\u00e7\u00e3o, publicidade, eventos corporativos, museus, videoclipes e muito mais.", "site": "https://reuters.screenocean.com/"}, {"nome": "Footage for pro", "descricao": "Daniele Carrer Encontre filmagens hist\u00f3ricas para editar seus v\u00eddeosUma cole\u00e7\u00e3o de centenas de filmes caseiros que mostram como era a vida real.", "site": "https://footageforpro.com/"}], "Alemanha": [{"nome": "filmportal.de (instituto Alem\u00e3o de Cinema e Museu do Cinema)", "descricao": "filmportal.de \u00e9 um departamento do DFF - Instituto Alem\u00e3o de Cinema e Museu do Cinema\n O portal foi criado em colabora\u00e7\u00e3o com CineGraph \u2013 Hamburg Center for Film Research eV, e \u00e9 apoiado pelos outros membros da associa\u00e7\u00e3o alem\u00e3 de bibliotecas de cinema e pelas associa\u00e7\u00f5es da ind\u00fastria cinematogr\u00e1fica.\n filmportal.de \u00e9 a plataforma central da Internet para informa\u00e7\u00f5es abrangentes, confi\u00e1veis \u200b\u200be gratuitas sobre todos os filmes do cinema alem\u00e3o. Suas ofertas geralmente acess\u00edveis e constantemente atualizadas fornecem uma vis\u00e3o representativa da animada cultura cinematogr\u00e1fica na Alemanha - desde o seu in\u00edcio at\u00e9 os dias atuais.", "site": "https://www.filmportal.de/"}], "EUA": [{"nome": "Lantern", "descricao": "Lantern \u00e9 a plataforma de busca para as cole\u00e7\u00f5es da Media History Digital Library , uma iniciativa de acesso aberto liderada por Eric Hoyt e o Wisconsin Center for Film and Theater Research. A Media History Digital Library (MHDL) digitaliza cole\u00e7\u00f5es de peri\u00f3dicos de m\u00eddia cl\u00e1ssicos que pertencem ao dom\u00ednio p\u00fablico para acesso p\u00fablico total.", "site": "https://lantern.mediahist.org/"}, {"nome": "witness", "descricao": "A maioria da popula\u00e7\u00e3o mundial agora tem uma c\u00e2mera no bolso. Pessoas em todos os lugares est\u00e3o recorrendo ao v\u00eddeo para documentar e contar hist\u00f3rias de abuso. Mas, com muita frequ\u00eancia, elas n\u00e3o est\u00e3o filmando com seguran\u00e7a ou efici\u00eancia, e seus v\u00eddeos n\u00e3o fazem diferen\u00e7a.", "site": "https://www.witness.org/about"}, {"nome": "Archive Farms", "descricao": "Archive Farms, Inc \u00e9 uma empresa sediada nos EUA que possui e gerencia arquivos especializados de fotos e filmagens hist\u00f3ricas. Sele\u00e7\u00f5es de clipes de filmes e fotografias de v\u00e1rias de nossas cole\u00e7\u00f5es s\u00e3o representadas pela Getty Images Nossas cole\u00e7\u00f5es incluem:\n THE TRAVEL FILM ARCHIVE \n ARQUIVO BERT MORGAN \n O ARQUIVO DE FOTOS DO CARIBE \n O ARQUIVO DE HIST\u00d3RIA DA FOTOGRAFIA \n O ARQUIVO BURTON HOLMES\n THE INDUSTRY FILM ARCHIVE \n ARQUIVO DE CINEMATOGRAFOS \n ARQUIVO DE FILMES DE ALIMENTOS \n ARQUIVO DE FILMES EDUCACIONAIS\n ARQUIVO DE FILMES MUDOS", "site": "https://www.archivefarms.com/"}, {"nome": "O The Travel Film Archive", "descricao": "O The Travel Film Archive \u00e9 uma cole\u00e7\u00e3o de relatos de viagem e filmes educacionais e industriais \u2013 muitos deles em cores \u2013 que mostram o mundo como ele era entre 1900 e 1970. Nossos acervos incluem arquivos dos renomados cineastas de viagem Burton Holmes, Andre de la Varre e James A. FitzPatrick, bem como filmagens feitas por muitos outros cinegrafistas intinentes. As filmagens do The Travel Film Archive est\u00e3o dispon\u00edveis para licenciamento na Getty Images e na TFA Network de agentes, diretamente ou por meio deste site. Getty Images, Global Image Works \n Reino Unido, Fran\u00e7a e Escandin\u00e1via:", "site": "https://www.travelfilmarchive.com/"}, {"nome": "ImageWorks Globais (GIW)", "descricao": "representa filmagens de premiados cineastas, diretores de fotografia, correspondentes e as empresas de produ\u00e7\u00e3o. O arquivo cont\u00e9m GIW conte\u00fado e banco de tiros profundas. Formatos incluem filme, HD, SD, vermelho e uma crescente cole\u00e7\u00e3o de material 3-D. Nossa sele\u00e7\u00e3o crescente de metragem royalty free \u00e9 uma outra maneira que fazemos \u00fanico, de alta qualidade metragem dispon\u00edvel para cada produ\u00e7\u00e3o", "site": "http://www.globalimageworks.com/"}, {"nome": "Footage Bank", "descricao": "Desde que abriu suas portas em 2002, FootageBank HD tornou-se o principal fornecedor de grandes imagens em formato HD e em todo o mundo para a televis\u00e3o, teatro, m\u00f3vel, independente, e os compradores de m\u00eddia corporativa. A biblioteca FootageBank HD representa mais de 120 premiado HD, IMAX, e produtores de m\u00eddia vermelho, cineastas e empresas de produ\u00e7\u00e3o de todo o mundo. Os clientes incluem Warner Brothers Television, Sony Pictures, HBO, Microsoft, Verizon, e The Walt Disney Company.", "site": "http://www.footagebank.com/"}, {"nome": "Reelinin the years", "descricao": "Este banco de dados pesquis\u00e1vel cont\u00e9m todas as 30.000 horas de nosso acervo de filmagens musicais , abrangendo os \u00faltimos 100 anos, al\u00e9m de mais de 10.000 horas de entrevistas detalhadas com \u00edcones do cinema e da televis\u00e3o , pol\u00edtica , com\u00e9dia , literatura , arte , ci\u00eancia , moda e esportes do s\u00e9culo XX , filmadas entre 1962 e 2012.", "site": "https://reelinintheyears.com/about-us/"}, {"nome": "Historic Films", "descricao": "Desde 1991, o Historic Films Archive fornece centenas de milhares de m\u00fasicas e clipes de arquivo para uso em document\u00e1rios, s\u00e9ries de televis\u00e3o, produ\u00e7\u00f5es de filmes e comerciais de televis\u00e3o em todo o mundo.", "site": "https://www.historicfilms.com/"}, {"nome": "CelebrityFootage", "descricao": "Somos um l\u00edder reconhecido no setor de filmagens de stock \n A cole\u00e7\u00e3o CelebrityFootage \u2122 abrange mais de 30 anos, apresentando todas as principais estrelas no tapete vermelho em premia\u00e7\u00f5es, estreias de filmes, eventos beneficentes e muito mais.", "site": "https://www.celebrityfootage.com/"}, {"nome": "Globalimageworks", "descricao": "O Global ImageWorks \u00e9 um arquivo independente de filmagens , fotos e com conte\u00fado hist\u00f3rico, contempor\u00e2neo e profundo, al\u00e9m de cole\u00e7\u00f5es premium exclusivas, selecionadas e projetadas por pesquisadores para pesquisadores.", "site": "https://www.globalimageworks.com/"}, {"nome": "Footage.net", "descricao": "Footage.net \u00e9 uma plataforma de busca e descoberta de filmagens online dedicada a conectar clientes de filmagens com provedores de filmagens. Lan\u00e7ada em 1996 e funcionando continuamente at\u00e9 o presente, a Footage.net permite que empresas de filmagens existentes e comercialmente orientadas tornem suas cole\u00e7\u00f5es de filmagens pesquis\u00e1veis \u200b\u200bpor meio de nossa plataforma de busca unificada e recebam solicita\u00e7\u00f5es de filmagens diretamente de nossa base de usu\u00e1rios de clientes de filmagens ativos.", "site": "https://www.footage.net/"}, {"nome": "APRESS", "descricao": "Encontre fotos e v\u00eddeos editoriais oportunos, poderosos e informativos para contar hist\u00f3rias mais ricas sobre not\u00edcias de \u00faltima hora e momentos ic\u00f4nicos", "site": "https://newsroom.ap.org/"}, {"nome": "CBS", "descricao": "A Columbia Broadcasting System (em portugu\u00eas: Sistema de Radiodifus\u00e3o Col\u00fambia; sigla oficial: CBS) \u00e9 uma das principais propriedades da Paramount Global, sendo respons\u00e1vel por s\u00e9ries como as principais CSI e NCIS e a antiga sitcom I Love Lucy (estrelada por Lucille Ball).", "site": "https://www.cbsnews.com/sunday-morning/archives/"}, {"nome": "Northeast Historic Film (NHF)", "descricao": "Northeast Historic Film (NHF) \u00e9 um arquivo de imagens em movimento, constitu\u00eddo como uma organiza\u00e7\u00e3o sem fins lucrativos em 1986. A miss\u00e3o do Northeast Historic Film \u00e9 coletar, preservar e compartilhar imagens em movimento de interesse das pessoas do norte da Nova Inglaterra .", "site": "https://oldfilm.org/"}, {"nome": "Periscope Film", "descricao": "Obrigado pelo seu interesse na biblioteca de filmagens de stock da Periscope Film. Mantemos uma das maiores cole\u00e7\u00f5es de militares hist\u00f3ricos, avia\u00e7\u00e3o e transporte nos EUA. Oferecemos pesquisa gratuita e podemos fornecer c\u00f3pias de visualiza\u00e7\u00e3o se voc\u00ea puder nos informar alguns dos tipos espec\u00edficos de material que est\u00e1 procurando. Quase todos os nossos materiais est\u00e3o dispon\u00edveis em alta qualidade 24p HD ProRes e resolu\u00e7\u00e3o 2k/4k.", "site": "https://stock.periscopefilm.com/"}, {"nome": "Rescued Film Project", "descricao": "O Rescued Film Project \u00e9 uma galeria de arquivo online de imagens que foram capturadas em filme entre as d\u00e9cadas de 1930 e o final da d\u00e9cada de 1990. Cada imagem em nosso arquivo foi recuperada de filme encontrado em locais do mundo todo e chegou at\u00e9 n\u00f3s na forma de rolos de filme n\u00e3o revelados. Temos a capacidade de processar filmes de todas as eras. At\u00e9 mesmo filmes que foram degradados pelo calor, umidade e idade. Ou que n\u00e3o s\u00e3o mais fabricados.", "site": "https://www.rescuedfilmproject.com/"}, {"nome": "veritone", "descricao": "CONTE SUA HIST\u00d3RIA COM FILMAGEM EXCLUSIVA\n De grandes campanhas publicit\u00e1rias a document\u00e1rios, filmes independentes e longas-metragens, estamos aqui para ajudar a dar vida ao seu projeto.", "site": "https://commerce.veritone.com/search;sortId=29"}, {"nome": "Cole\u00e7\u00f5es e Arquivos do Alasca e das Regi\u00f5es Polares (APRCA)", "descricao": "A miss\u00e3o do Alaska and Polar Regions Collections & Archives (APRCA) \u00e9 adquirir, preservar e fornecer acesso a materiais que documentam o passado e o presente do Alasca e das regi\u00f5es polares.", "site": "https://library.uaf.edu/aprca"}, {"nome": "Huntley Film Archives", "descricao": "Somos uma equipe de arquivistas de filmes dedicados que visam ajudar voc\u00ea a produzir o melhor conte\u00fado de arquivo para seu projeto.Nossas cole\u00e7\u00f5es s\u00e3o vastas e variadas - a soma de mais de cinquenta anos de servi\u00e7o \u00e0 produ\u00e7\u00e3o e ao arquivamento de filmes. Nossas filmagens come\u00e7am por volta de 1895 e cobrimos os lugares e as pessoas do s\u00e9culo XX de forma abrangente e global. Nossos acervos s\u00e3o principalmente document\u00e1rios com a adi\u00e7\u00e3o de bastidores de Hollywood, Bollywood e uma cole\u00e7\u00e3o especial de cineastas pioneiros. \u00c9 com grande orgulho que nosso material de origem ainda est\u00e1 em celuloide para qualidade e aquela textura cinematogr\u00e1fica. Nossos filmes s\u00e3o armazenados em cofres de filmes constru\u00eddos para esse fim e nossa equipe \u00e9 especialista em sua \u00e1rea.Somos totalmente independentes e n\u00e3o temos agentes. Dessa forma, voc\u00ea obt\u00e9m o melhor pre\u00e7o e o melhor servi\u00e7o, n\u00e3o somos apenas vendedores, somos historiadores. Huntley Film Archives - filmagens hist\u00f3ricas e antigas que s\u00e3o peculiares, \u00fanicas e raras.", "site": "https://www.huntleyarchives.com/"}, {"nome": "Alaska\u2019s Digital Archives", "descricao": "O objetivo dos Arquivos Digitais do Alasca \u00e9 fornecer um local \u00fanico e f\u00e1cil de usar para institui\u00e7\u00f5es em todo o estado compartilharem seus recursos hist\u00f3ricos. Nosso objetivo \u00e9 apoiar as necessidades de ensino e pesquisa dos habitantes do Alasca e de outras pessoas interessadas na hist\u00f3ria e cultura do Alasca.Sobre os Arquivos\n O objetivo dos Arquivos Digitais do Alasca \u00e9 fornecer um local \u00fanico e f\u00e1cil de usar para institui\u00e7\u00f5es em todo o estado compartilharem seus recursos hist\u00f3ricos.\n Nosso objetivo \u00e9 apoiar as necessidades de ensino e pesquisa dos habitantes do Alasca e de outras pessoas interessadas na hist\u00f3ria e cultura do Alasca.Abrir no Google Tradutor", "site": "https://vilda.alaska.edu/"}, {"nome": "Thames Television", "descricao": "Television\" - Thames Television - um orgulhoso membro da Fam\u00edlia Fremantle.\n Somos o canal oficial do departamento de Arquivo Fremantle - Fremantle \u00e9 o orgulhoso propriet\u00e1rio do ic\u00f4nico arquivo da Thames Television - de entretenimento a programas factuais contundentes. Thames certamente tinha um \"talento para a televis\u00e3o\"\n Se voc\u00ea deseja licenciar algum clipe de nossos programas para seu projeto ou produ\u00e7\u00e3o\n Envie um e-mail para archive@fremantle.com", "site": "https://fremantle.com/"}, {"nome": "Getty Images", "descricao": "Um dos maiores acervos visuais do mundo, abrangendo fotos, v\u00eddeos e m\u00fasicas.", "site": "https://www.gettyimages.com/\u200b\u200b"}, {"nome": "Shutterstock", "descricao": "Grande variedade de fotos, vetores, v\u00eddeos e m\u00fasica com foco em qualidade e diversidade.", "site": "https://www.shutterstock.com/\u200b\u200b\u200b"}, {"nome": "Adobe Stock", "descricao": "Integrado aos produtos da Adobe, oferecendo fotos, v\u00eddeos e ilustra\u00e7\u00f5es.", "site": "https://stock.adobe.com/\u200b\u200b"}, {"nome": "Alamy", "descricao": "Aceito diverso com mais de 100 milh\u00f5es de imagens e op\u00e7\u00f5es editoriais.", "site": "https://www.alamy.com/\u200b\u200b\u200b"}, {"nome": "iStock por Getty Images", "descricao": "Vers\u00e3o mais acess\u00edvel e simplificada da Getty Images, com planos flex\u00edveis.", "site": "https://https ://www .istockphoto .com/"}], "Su\u00e9cia": [{"nome": "April Film", "descricao": "Somos uma ag\u00eancia de imagens em movimento que licencia clipes de filmes para comerciais, longas-metragens, document\u00e1rios, s\u00e9ries de TV, etc. Fornecemos todos os tipos de clipes de filmes - entre em contato quando tiver um projeto que precise de imagens em movimento.", "site": "http://www.aprilfilm.se/"}], "Holanda": [{"nome": "Ricks Film Restoration", "descricao": "Ol\u00e1, moro em Leidschendam, Holanda. O principal objetivo deste canal \u00e9 fornecer imagens de filmes hist\u00f3ricos restaurados, principalmente de antes da Segunda Guerra Mundial, para que os espectadores possam aprender e desfrutar. Muito material hist\u00f3rico de filmes foi digitalizado com scanners desatualizados, resultando em imagens inst\u00e1veis, fracas e desfocadas. Hoje em dia, muito pode ser alcan\u00e7ado no que diz respeito ao aprimoramento dessas imagens por meio de ferramentas de software sofisticadas, incluindo Intelig\u00eancia Artificial. Isso envolve estabiliza\u00e7\u00e3o de movimento, corre\u00e7\u00e3o de velocidade, contraste, aprimoramento de brilho e nitidez, redu\u00e7\u00e3o de ru\u00eddo, remo\u00e7\u00e3o de poeira e manchas e upscaling para HD com IA. e recentemente at\u00e9 coloriza\u00e7\u00e3o!\n Meu hobby \u00e9 obter os melhores resultados poss\u00edveis na restaura\u00e7\u00e3o de filmes, usando minha experi\u00eancia e conhecimento de 15 anos em combina\u00e7\u00e3o com o software mais recente. A maioria dos filmes em meu canal passou por um processo trabalhoso e demorado de quatro etapas antes de enviar os resultados para o YouTube. Muitos dos meus filmes s\u00e3o acompanhados de legendas CC.", "site": "https://www.ricksfilmrestoration.com/"}, {"nome": "O banco de filmes do Heemkunde Boxtel", "descricao": "O banco de filmes do Heemkunde Boxtel \u00e9 administrado por Hans Mestrum. Ele tamb\u00e9m gostaria de receber seus filmes da antiga Boxtel. Sinta-se \u00e0 vontade para contat\u00e1-lo via: filmbank @ heemkundeboxtel.nl", "site": "https://www.beeldbankboxtel.nl/cgi-bin/films.pl"}, {"nome": "Banco de dados de TV e r\u00e1dio\n Rastreamento/arquivamento de televis\u00e3o e r\u00e1dio holandesa perdida", "descricao": "Procuramos ativamente grava\u00e7\u00f5es antigas de televis\u00e3o e r\u00e1dio holandesas que se perderam ao longo do tempo. Muitas pessoas costumavam fazer suas pr\u00f3prias grava\u00e7\u00f5es em fitas de v\u00eddeo. Examinamos isso e digitalizamos todo o material interessante. Compartilhamos fragmentos disso em nosso canal no YouTube. Produtores, (ex) funcion\u00e1rios de radiodifus\u00e3o, cole\u00e7\u00f5es particulares, escolas e empresas; realmente vem de todos os lugares.", "site": "https://www.patreon.com/tvenradiodb"}]};
+
+        // Função para verificar o login
+        function verificarLogin() {
+            var username = document.getElementById("username").value;
+            var password = document.getElementById("password").value;
+            var loginError = document.getElementById("login-error");
+
+            if (username === "imagemdearquivo" && password === "1978") {
+                // Esconde o overlay de login
+                document.getElementById("login-overlay").style.display = "none";
+                // Mostra o mapa e os painéis
+                document.getElementById("map").style.display = "block";
+                document.getElementById("acervo-list").style.display = "block";
+                document.getElementById("acervo-detail").style.display = "block";
+            } else {
+                loginError.textContent = "Usuário ou senha incorretos!";
+            }
+        }
+
+        // Função para carregar os acervos de um país no painel da lista
+        function loadAcervos(pais) {
+            var listDiv = document.getElementById("acervo-list");
+            listDiv.innerHTML = "<h4>Acervos de " + pais + "</h4>";
+            if(acervos_data[pais]) {
+                acervos_data[pais].forEach(function(acervo) {
+                    var a = document.createElement("a");
+                    a.href = "#";
+                    a.textContent = acervo.nome;
+                    a.style.display = "block";
+                    a.style.marginBottom = "5px";
+                    a.onclick = function() {
+                        showAcervoDetail(acervo);
+                    };
+                    listDiv.appendChild(a);
+                });
+            } else {
+                listDiv.innerHTML += "<p>Nenhum acervo encontrado.</p>";
+            }
+        }
+
+        // Função para exibir os detalhes do acervo no painel de detalhes
+        function showAcervoDetail(acervo) {
+            var detailDiv = document.getElementById("acervo-detail");
+            detailDiv.innerHTML = "<h4>" + acervo.nome + "</h4>" +
+                                  "<p><b>Descrição:</b> " + acervo.descricao + "</p>" +
+                                  "<p><a href='" + acervo.site + "' target='_blank'>Visitar site</a></p>";
+
+            // Tenta carregar o iframe
+            var iframe = document.createElement('iframe');
+            iframe.src = acervo.site;
+            iframe.style.width = '100%';
+            iframe.style.height = '600px';
+            iframe.style.border = 'none';
+            
+            // Se não carregar, exibe a mensagem
+            iframe.onerror = function() {
+                detailDiv.innerHTML += "<p><strong>Este site não pode ser exibido aqui devido a restrições de segurança. Clique no link acima para visitar diretamente.</strong></p>";
+            };
+            
+            // Tenta adicionar o iframe
+            detailDiv.appendChild(iframe);
+        }
+        </script>
+    </body>
+    </html>
+    
+    
+            <div class="folium-map" id="map_8bb4e9414978bff5f84f14a73b9611d3" ></div>
+        
+</body>
+<script>
+    
+    
+            var map_8bb4e9414978bff5f84f14a73b9611d3 = L.map(
+                "map_8bb4e9414978bff5f84f14a73b9611d3",
+                {
+                    center: [40.0, -30.0],
+                    crs: L.CRS.EPSG3857,
+                    ...{
+  "zoom": 3,
+  "zoomControl": true,
+  "preferCanvas": false,
+}
+
+                }
+            );
+
+            
+
+        
+    
+            var tile_layer_578d9abc1b9cb81252123aab75883aac = L.tileLayer(
+                "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                {
+  "minZoom": 0,
+  "maxZoom": 19,
+  "maxNativeZoom": 19,
+  "noWrap": false,
+  "attribution": "\u0026copy; \u003ca href=\"https://www.openstreetmap.org/copyright\"\u003eOpenStreetMap\u003c/a\u003e contributors",
+  "subdomains": "abc",
+  "detectRetina": false,
+  "tms": false,
+  "opacity": 1,
+}
+
+            );
+        
+    
+            tile_layer_578d9abc1b9cb81252123aab75883aac.addTo(map_8bb4e9414978bff5f84f14a73b9611d3);
+        
+    
+            var marker_e9ab9984c44af8bf12fdecbae6c128a4 = L.marker(
+                [55.3781, -3.436],
+                {
+}
+            ).addTo(map_8bb4e9414978bff5f84f14a73b9611d3);
+        
+    
+        var popup_63b1d4080ea9e4066c9386e39425b15b = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_41670bf7916b7f15419151d836d18949 = $(`<div id="html_41670bf7916b7f15419151d836d18949" style="width: 100.0%; height: 100.0%;"><a href='#' onclick="loadAcervos('Reino Unido'); return false;">Ver acervos de Reino Unido</a></div>`)[0];
+                popup_63b1d4080ea9e4066c9386e39425b15b.setContent(html_41670bf7916b7f15419151d836d18949);
+            
+        
+
+        marker_e9ab9984c44af8bf12fdecbae6c128a4.bindPopup(popup_63b1d4080ea9e4066c9386e39425b15b)
+        ;
+
+        
+    
+    
+            marker_e9ab9984c44af8bf12fdecbae6c128a4.bindTooltip(
+                `<div>
+                     Reino Unido (18 acervo(s))
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var marker_fa9889c718ebec33a9788e79b6480e75 = L.marker(
+                [41.87194, 12.56738],
+                {
+}
+            ).addTo(map_8bb4e9414978bff5f84f14a73b9611d3);
+        
+    
+        var popup_08724fdb737b0172ff89302a2a755d3c = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_bb89375a8d77e063bfca74ca7baf8b09 = $(`<div id="html_bb89375a8d77e063bfca74ca7baf8b09" style="width: 100.0%; height: 100.0%;"><a href='#' onclick="loadAcervos('Itália'); return false;">Ver acervos de Itália</a></div>`)[0];
+                popup_08724fdb737b0172ff89302a2a755d3c.setContent(html_bb89375a8d77e063bfca74ca7baf8b09);
+            
+        
+
+        marker_fa9889c718ebec33a9788e79b6480e75.bindPopup(popup_08724fdb737b0172ff89302a2a755d3c)
+        ;
+
+        
+    
+    
+            marker_fa9889c718ebec33a9788e79b6480e75.bindTooltip(
+                `<div>
+                     Itália (2 acervo(s))
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var marker_3dd57b26e1b64005faaa5996015af92b = L.marker(
+                [46.603354, 1.888334],
+                {
+}
+            ).addTo(map_8bb4e9414978bff5f84f14a73b9611d3);
+        
+    
+        var popup_43c1887d040591c44e26962e4b5caad3 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_2f49893b41bd4e7754133fdcf26a413f = $(`<div id="html_2f49893b41bd4e7754133fdcf26a413f" style="width: 100.0%; height: 100.0%;"><a href='#' onclick="loadAcervos('França'); return false;">Ver acervos de França</a></div>`)[0];
+                popup_43c1887d040591c44e26962e4b5caad3.setContent(html_2f49893b41bd4e7754133fdcf26a413f);
+            
+        
+
+        marker_3dd57b26e1b64005faaa5996015af92b.bindPopup(popup_43c1887d040591c44e26962e4b5caad3)
+        ;
+
+        
+    
+    
+            marker_3dd57b26e1b64005faaa5996015af92b.bindTooltip(
+                `<div>
+                     França (6 acervo(s))
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var marker_8037d0d2501ea6a36f469a6436ff32ea = L.marker(
+                [51.1657, 10.4515],
+                {
+}
+            ).addTo(map_8bb4e9414978bff5f84f14a73b9611d3);
+        
+    
+        var popup_eda88ca066899534093597044b5b3eee = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_4b6c6658cf3dc9721969bed29f41673d = $(`<div id="html_4b6c6658cf3dc9721969bed29f41673d" style="width: 100.0%; height: 100.0%;"><a href='#' onclick="loadAcervos('Alemanha'); return false;">Ver acervos de Alemanha</a></div>`)[0];
+                popup_eda88ca066899534093597044b5b3eee.setContent(html_4b6c6658cf3dc9721969bed29f41673d);
+            
+        
+
+        marker_8037d0d2501ea6a36f469a6436ff32ea.bindPopup(popup_eda88ca066899534093597044b5b3eee)
+        ;
+
+        
+    
+    
+            marker_8037d0d2501ea6a36f469a6436ff32ea.bindTooltip(
+                `<div>
+                     Alemanha (1 acervo(s))
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var marker_bb788766377a6c8324fb023b580c9ecb = L.marker(
+                [37.0902, -95.7129],
+                {
+}
+            ).addTo(map_8bb4e9414978bff5f84f14a73b9611d3);
+        
+    
+        var popup_a5622a76288385d09fad0f57b08033ac = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_7cb90f88974a8c0e36ca1366c8b2b573 = $(`<div id="html_7cb90f88974a8c0e36ca1366c8b2b573" style="width: 100.0%; height: 100.0%;"><a href='#' onclick="loadAcervos('EUA'); return false;">Ver acervos de EUA</a></div>`)[0];
+                popup_a5622a76288385d09fad0f57b08033ac.setContent(html_7cb90f88974a8c0e36ca1366c8b2b573);
+            
+        
+
+        marker_bb788766377a6c8324fb023b580c9ecb.bindPopup(popup_a5622a76288385d09fad0f57b08033ac)
+        ;
+
+        
+    
+    
+            marker_bb788766377a6c8324fb023b580c9ecb.bindTooltip(
+                `<div>
+                     EUA (26 acervo(s))
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var marker_f936ed46487850eab2edec68dedc8566 = L.marker(
+                [60.1282, 18.6435],
+                {
+}
+            ).addTo(map_8bb4e9414978bff5f84f14a73b9611d3);
+        
+    
+        var popup_5592f075314d90739e6178cd05c2385d = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_6b027179bf7b8e616470bc97c2859300 = $(`<div id="html_6b027179bf7b8e616470bc97c2859300" style="width: 100.0%; height: 100.0%;"><a href='#' onclick="loadAcervos('Suécia'); return false;">Ver acervos de Suécia</a></div>`)[0];
+                popup_5592f075314d90739e6178cd05c2385d.setContent(html_6b027179bf7b8e616470bc97c2859300);
+            
+        
+
+        marker_f936ed46487850eab2edec68dedc8566.bindPopup(popup_5592f075314d90739e6178cd05c2385d)
+        ;
+
+        
+    
+    
+            marker_f936ed46487850eab2edec68dedc8566.bindTooltip(
+                `<div>
+                     Suécia (1 acervo(s))
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var marker_0775ba7d41cb5db911c138524d955792 = L.marker(
+                [52.3784, 4.9009],
+                {
+}
+            ).addTo(map_8bb4e9414978bff5f84f14a73b9611d3);
+        
+    
+        var popup_dc8fcaae364cbe7f8e3898bd392c75ba = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_2a1be14dc7c523b32958188f537493db = $(`<div id="html_2a1be14dc7c523b32958188f537493db" style="width: 100.0%; height: 100.0%;"><a href='#' onclick="loadAcervos('Holanda'); return false;">Ver acervos de Holanda</a></div>`)[0];
+                popup_dc8fcaae364cbe7f8e3898bd392c75ba.setContent(html_2a1be14dc7c523b32958188f537493db);
+            
+        
+
+        marker_0775ba7d41cb5db911c138524d955792.bindPopup(popup_dc8fcaae364cbe7f8e3898bd392c75ba)
+        ;
+
+        
+    
+    
+            marker_0775ba7d41cb5db911c138524d955792.bindTooltip(
+                `<div>
+                     Holanda (3 acervo(s))
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+</script>
+</html>
