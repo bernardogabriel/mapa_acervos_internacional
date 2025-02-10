@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    
+        <script>
+            L_NO_TOUCH = false;
+            L_DISABLE_3D = false;
+        </script>
+    
+    <style>html, body {width: 100%;height: 100%;margin: 0;padding: 0;}</style>
+    <style>#map {position:absolute;top:0;bottom:0;right:0;left:0;}</style>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/python-visualization/folium/folium/templates/leaflet.awesome.rotate.min.css"/>
+    
+            <meta name="viewport" content="width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <style>
+                #map_3ee2a657d7ab0415ba60d59fdf4805a9 {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+                .leaflet-container { font-size: 1rem; }
+            </style>
+        
+</head>
+<body>
+    
+    
+    <!DOCTYPE html>
+    <html lang="pt-BR">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Mapa Interativo</title>
+        <style>
+          /* Estilo para o formulário de login */
+          #login-overlay {
+              position: fixed;
+              top: 0;
+              left: 0;
+              width: 100%;
+              height: 100%;
+              background-color: rgba(0, 0, 0, 0.8);
+              z-index: 9999;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+          }
+          #login-box {
+              background-color: white;
+              padding: 20px;
+              border-radius: 10px;
+              text-align: center;
+          }
+          #login-box input {
+              margin: 10px 0;
+              padding: 10px;
+              width: 80%;
+          }
+          #login-box button {
+              padding: 10px 20px;
+              background-color: #4CAF50;
+              color: white;
+              border: none;
+              border-radius: 5px;
+              cursor: pointer;
+          }
+          #login-box button:hover {
+              background-color: #45a049;
+          }
+          #login-error {
+              color: red;
+              margin-top: 10px;
+          }
+
+          /* Estilo para os painéis do mapa */
+          #acervo-list {
+              position: fixed;
+              top: 10px;
+              left: 10px;
+              width: 350px;
+              height: 90%;
+              overflow-y: auto;
+              background-color: white;
+              z-index: 1000;
+              padding: 10px;
+              border: 2px solid black;
+              font-size: 18px;
+              display: none;
+          }
+          #acervo-detail {
+              position: fixed;
+              top: 10px;
+              right: 10px;
+              width: 50%;
+              height: 80%;
+              overflow-y: auto;
+              background-color: white;
+              z-index: 2000;
+              padding: 10px;
+              border: 4px solid black;
+              font-size: 18px;
+              display: none;
+          }
+          #acervo-detail iframe {
+              width: 100%;
+              height: 600px;
+              border: none;
+          }
+          .destaque {
+              font-size: 24px;
+              font-weight: bold;
+              color: #2d2d2d;
+              text-align: center;
+              margin-bottom: 20px;
+          }
+        </style>
+    </head>
+    <body>
+        <!-- Overlay de login -->
+        <div id="login-overlay">
+            <div id="login-box">
+                <h2>Login</h2>
+                <input type="text" id="username" placeholder="Usuário">
+                <input type="password" id="password" placeholder="Senha">
+                <button onclick="verificarLogin()">Entrar</button>
+                <div id="login-error"></div>
+            </div>
+        </div>
+
+        <!-- Painel da lista de acervos -->
+        <div id="acervo-list">
+          <div class="destaque">Olá Usuário! Clique em qualquer região no mapa para carregar a lista de instituições!</div>
+          <p><span style="font-size: 18px;">Última atualização: FEV.2025.</span></p>
+        </div>
+
+        <!-- Painel de detalhes do acervo -->
+        <div id="acervo-detail">
+          <div class="destaque">Ao passar o mouse sobre o nome da instituição, os detalhes serão exibidos aqui! Mas atenção: alguns sites possuem proteções de segurança.</div>
+          <p><span style="font-size: 18px;">Caso o site não seja exibido, clique em VISITAR SITE.</span></p>
+          <p><span style="font-size: 18px;">Última atualização: FEV.2025.</span></p>
+        </div>
+
+        <!-- Mapa -->
+        <div id="map" style="display: none;"></div>
+
+        <script>
+        // Dados dos acervos, injetados a partir do Python
+        var acervos_data = {"Fran\u00e7a": [{"nome": "CNC Centre national du cin\u00e9ma et de l'image anim\u00e9e", "descricao": "O CNC apoia a cria\u00e7\u00e3o Cinema, audiovisual, videojogos: o Centro Nacional de Cinema e Imagens Animadas apoia projetos, apoia os setores e financia os criadores de hoje e de amanh\u00e3.", "site": "https://www.cnc.fr/"}, {"nome": "Archives nationales (France)", "descricao": "O Arquivo Nacional da Fran\u00e7a, uma institui\u00e7\u00e3o do Minist\u00e9rio da Cultura, \u00e9 o maior centro de arquivos da Europa. Mem\u00f3ria da Fran\u00e7a, preservam e comunicam ao p\u00fablico os arquivos do Estado desde a Idade M\u00e9dia, os dos not\u00e1rios parisienses e os arquivos privados de interesse nacional.\n Contribuem para o conhecimento da hist\u00f3ria e para a partilha de valores c\u00edvicos com o p\u00fablico em geral, particularmente os mais jovens, atrav\u00e9s das suas exposi\u00e7\u00f5es, publica\u00e7\u00f5es e outras atividades de media\u00e7\u00e3o.\n A conserva\u00e7\u00e3o e a comunica\u00e7\u00e3o s\u00e3o asseguradas em dois locais:\n - s\u00edtio de Paris : arquivos p\u00fablicos do Antigo Regime, acta dos not\u00e1rios de Paris\n - s\u00edtio de Pierrefitte-sur-Seine : arquivos p\u00fablicos desde a Revolu\u00e7\u00e3o at\u00e9 aos dias de hoje, fundos privados (todos os per\u00edodos)", "site": "https://www.archives-nationales.culture.gouv.fr/fr/web/guest/faire-une-recherche"}, {"nome": "Le Mus\u00e9e de l'Homme", "descricao": "O que \u00e9 o Museu do Homem? Inaugurado em junho de 1938, o Museu do Homem apresenta a evolu\u00e7\u00e3o do Homem e das sociedades, combinando abordagens biol\u00f3gicas, sociais e culturais. Est\u00e1 localizado na ala Passy do Palais de Chaillot (Paris 16 ) , em um edif\u00edcio constru\u00eddo para a Exposi\u00e7\u00e3o Universal de 1937.", "site": "https://www.museedelhomme.fr/fr/la-recherche-au-musee-de-l-homme"}, {"nome": "Mus\u00e9e national de la Marine", "descricao": "A pesquisa. Em 1997, foi assinado um acordo entre o Museu Mar\u00edtimo Nacional e o Laborat\u00f3rio Medieval Ocidental de Paris ( LAMOP ), uma unidade mista de investiga\u00e7\u00e3o (UMR 8589), colocada sob a supervis\u00e3o da Universidade de Paris 1 Panth\u00e9on-Sorbonne (UFR09). e o Centro Nacional de Investiga\u00e7\u00e3o Cient\u00edfica (CNRS), levando \u00e0 cria\u00e7\u00e3o de um departamento de arqueologia subaqu\u00e1tica que oferece log\u00edstica documental aos jovens pesquisadores que atuam nas \u00e1reas de arqueologia subaqu\u00e1tica, arquitetura naval ou mesmo etnografia naval e hist\u00f3ria da arte.", "site": "https://www.musee-marine.fr/professionnels/chercheurs.html"}], "Alemanha": [{"nome": "Bundesarchiv-Filmarchiv(Deutschland)", "descricao": "Arquivo de imagens digitais. O banco de dados de imagens digitais do Arquivo Federal cont\u00e9m uma sele\u00e7\u00e3o representativa e em constante crescimento de mais de 12 milh\u00f5es de imagens, fotografias a\u00e9reas e cartazes sobre a hist\u00f3ria alem\u00e3 armazenados nos Arquivos Federais.\n As primeiras fotografias do banco de imagens do Arquivo Federal datam de 1860. O foco do acervo s\u00e3o documentos imag\u00e9ticos sobre acontecimentos e pessoas\n a Rep\u00fablica de Weimar (incluindo participa\u00e7\u00f5es \"Image 102 Current Images Central, Georg Pahl\")\n ao Terceiro Reich, aqui em particular as fotos das empresas de propaganda da Wehrmacht (estoque \"Imagem 101\"),\n na RDA, incluindo imagens \"oficiais\" do invent\u00e1rio \"Image 183 General German News Service - Central Image\" e \"fotos do dia a dia\" (\" Image 226 Vorlass Hans Martin Sewcz \", \"N 1648 Image Beier Collection\")\n para a Rep\u00fablica Federal da Alemanha (incluindo invent\u00e1rio \"B 145 Imagem do Gabinete de Imprensa e Informa\u00e7\u00e3o do Governo Federal\")\n Atualmente h\u00e1 um corte representativo de cerca de 245 mil imagens do Arquivo Federal nesta base de dados. Fotos da Assessoria de Imprensa Federal tamb\u00e9m constam deste banco de dados.", "site": "https://www.bundesarchiv.de/im-archiv-recherchieren/archivgut-recherchieren/recherchesysteme/"}, {"nome": "Arquivo Federal Alem\u00e3o", "descricao": "Bem-vindo ao Digitaler Lesesaal do Arquivo Federal Alem\u00e3o : https://digitaler-lesesaal.bundesarchiv.de/page/5a63b0942cad472b857d4a4c9c18aa17", "site": "https://digitaler-lesesaal.bundesarchiv.de/en"}, {"nome": "Historiek", "descricao": "Historiek \u00e9 uma revista de hist\u00f3ria online independente para um p\u00fablico amplo. Queremos conectar a hist\u00f3ria e os assuntos atuais e tornar as hist\u00f3rias hist\u00f3ricas acess\u00edveis gratuitamente a um p\u00fablico amplo. Al\u00e9m do nosso site, temos uma newsletter que chega semanalmente a mais de 50.000 assinantes.", "site": "https://historiek.net/"}, {"nome": "Deutsches Filminstitut", "descricao": "O DFF \u2013 German Film Institute & Film Museum \u00e9 uma institui\u00e7\u00e3o l\u00edder no patrim\u00f3nio cinematogr\u00e1fico internacional. Somos pioneiros na preserva\u00e7\u00e3o do patrim\u00f3nio cinematogr\u00e1fico e na partilha da cultura cinematogr\u00e1fica com um p\u00fablico global. Para conseguir isso, combinamos museus, cinemas, arquivos e cole\u00e7\u00f5es, festivais, plataformas digitais, projetos de pesquisa e digitaliza\u00e7\u00e3o, bem como in\u00fameras ofertas educacionais. A partir da metr\u00f3pole culturalmente diversificada e din\u00e2mica de Frankfurt am Main, estamos a trabalhar ativamente para moldar uma sociedade aberta. Mantemos relacionamentos com institui\u00e7\u00f5es e iniciativas do cinema e da ci\u00eancia em todo o mundo. Ao fazer isso, conectamos o significado material e hist\u00f3rico do filme com o futuro digital.", "site": "https://www.dff.film/besuch/recherche/"}, {"nome": "\u00d6sterreichisches Filmmuseum", "descricao": "Declara\u00e7\u00e3o de Miss\u00e3o do Museu do Cinema Austr\u00edaco \n O Museu do Cinema Austr\u00edaco dedica-se \u00e0 preserva\u00e7\u00e3o, pesquisa e apresenta\u00e7\u00e3o do meio cinematogr\u00e1fico desde 1964. As suas atividades s\u00e3o t\u00e3o diversas quanto o pr\u00f3prio meio: o museu do cinema opera um cinema, preserva cole\u00e7\u00f5es e \u00e9 um centro de pesquisa e ensino. Acima de tudo, o museu do cinema \u00e9 um local onde podemos encontrar imagens e hist\u00f3rias que, na melhor das hip\u00f3teses, podem mudar a nossa vis\u00e3o do mundo. O filme \u00e9 a nova forma de arte mais importante e fornece os documentos contempor\u00e2neos mais impressionantes desde o in\u00edcio do s\u00e9culo XX.", "site": "https://www.filmmuseum.at/sammlungen/filmsammlung"}, {"nome": "FilmmuseumD\u00fcsseldorf (Museu do Cinema de D\u00fcsseldorf)", "descricao": "Museu do Cinema:museu do cinema, os visitantes vivenciam a hist\u00f3ria do cinema. Desde as primeiras imagens em movimento, passando pela inven\u00e7\u00e3o da cinematografia at\u00e9 aos modernos efeitos especiais, s\u00e3o transmitidos os diversos aspectos do meio. Exposi\u00e7\u00f5es interativas e uma r\u00e9plica do est\u00fadio de Hollywood proporcionam uma visita emocionante.", "site": "https://www.duesseldorf.de/filmmuseum/"}, {"nome": "FilmmuseumPotsdam", "descricao": "Museu do Cinema de Potsdam! Aqui voc\u00ea pode vivenciar a hist\u00f3ria do cinema de Babelsberg e do mundo - na casa mais antiga do centro de Potsdam. O est\u00e1bulo dos reis prussianos, constru\u00eddo como laranjal em 1685, recebeu sua apar\u00eancia atual no s\u00e9culo XVIII pelo construtor de Sanssouci, Knobelsdorff. Desde 1981, o chamado Marstall, no centro hist\u00f3rico de Potsdam, \u00e9 o edif\u00edcio principal do museu do cinema e abriga exposi\u00e7\u00f5es, um cinema, uma loja, restaurantes e escrit\u00f3rios. Os focos de pesquisa do museu baseiam-se nas \u00e1reas de acervo e nos projetos expositivos atuais. Eventos cient\u00edficos e projetos de pesquisa maiores s\u00e3o realizados na Babelsberg KONRAD WOLF Film University e em colabora\u00e7\u00e3o com museus parceiros, universidades, funda\u00e7\u00f5es, institutos de pesquisa n\u00e3o universit\u00e1rios e institui\u00e7\u00f5es culturais.https://www.filmmuseum-potsdam.de/Forschung.html", "site": "https://www.filmmuseum-potsdam.de/Forschung.html"}, {"nome": "M\u00fcnchnerFilmmuseum (Museu da Cidade de Munique)", "descricao": "O edif\u00edcio mais antigo, o arsenal hist\u00f3rico de 1500, est\u00e1 orientado para a Pra\u00e7a St. Jakobs, mas tamb\u00e9m toca o Rindermarkt com a ala de cole\u00e7\u00e3o constru\u00edda pelo arquiteto Gustav Gsaenger no final dos anos 1950 e a Sebastiansplatz com a r\u00e9plica do edif\u00edcio dos est\u00e1bulos medievais de 1977. N\u00e3o s\u00f3 pelo seu tamanho, mas tamb\u00e9m pelas suas enormes cole\u00e7\u00f5es, o museu da cidade \u00e9 o maior museu municipal da Alemanha. O valor das suas participa\u00e7\u00f5es n\u00e3o pode sequer ser expresso grosseiramente em n\u00fameros.", "site": "https://www.muenchner-stadtmuseum.de/sammlungen"}, {"nome": "Lost Films", "descricao": "Lost Films \u00e9 uma iniciativa do Deutsche Kinemathek \u2013 Museum f\u00fcr Film und Fernsehen , Berlim, financiado pela Kulturstiftung des Bundes (Funda\u00e7\u00e3o Cultural Federal Alem\u00e3). Seu objetivo \u00e9 tornar vis\u00edvel a parte invis\u00edvel da hist\u00f3ria do cinema, atuando como uma plataforma de colabora\u00e7\u00e3o para que usu\u00e1rios da internet re\u00fanam informa\u00e7\u00f5es relevantes e documentos sobreviventes sobre filmes perdidos. O arquivo de t\u00edtulos cont\u00e9m atualmente mais de 3.500 filmes considerados perdidos ou declarados perdidos.", "site": "https://www.lost-films.eu/films/facet/clear/all"}], "EUA": [{"nome": "Media History Digital Library", "descricao": "Por d\u00e9cadas, pesquisadores confiaram em jornais comerciais e revistas de f\u00e3s para escrever as hist\u00f3rias do cinema, da m\u00eddia e da transmiss\u00e3o. Jornais comerciais da ind\u00fastria, como Variety e Film Daily , oferecem ampla documenta\u00e7\u00e3o sobre o desenvolvimento das ind\u00fastrias de m\u00eddia e seu impacto sobre o p\u00fablico e a cultura. No entanto, o acesso a essas fontes permaneceu limitado. Os acad\u00eamicos dependiam de fac-s\u00edmiles de microfilme incompletos e de baixa qualidade. A maioria das revistas de cinema e transmiss\u00e3o, que nunca foram transferidas para microfilme, estavam dispon\u00edveis apenas em algumas institui\u00e7\u00f5es. E nenhuma das c\u00f3pias em microfilme ou impressas era pesquis\u00e1vel em texto completo. Em vez disso, os pesquisadores tinham que virar p\u00e1gina por p\u00e1gina para procurar itens relevantes para suas perguntas de pesquisa.\n Dois anos depois, em 2019, o MHDL recebeu uma Subven\u00e7\u00e3o de Extens\u00e3o Digital de US$ 150.000 do American Council of Learned Societies em apoio \u00e0 iniciativa \"Globalizing and Enhancing the Media History Digital Library\". O financiamento da subven\u00e7\u00e3o permitiu uma s\u00e9rie de melhorias no banco de dados e na interface, bem como a adi\u00e7\u00e3o de dezenas de revistas em outros idiomas. Obrigado \u00e0 equipe, liderada por Eric Hoyt e Kelley Conway, que trabalharam nessa iniciativa e cuja pesquisa aparecer\u00e1 no pr\u00f3ximo livro de acesso aberto, Global Movie Magazine Networks .\n \n Ao longo da d\u00e9cada desde o lan\u00e7amento de seu primeiro site, o MHDL teve um impacto transformador no estudo da hist\u00f3ria do cinema e da transmiss\u00e3o. O MHDL e o Lantern foram reconhecidos com grandes pr\u00eamios da Society for Cinema and Media Studies, International Association for Media and History, American Association of School Librarians, Popular Culture Association e American Culture Association. In\u00fameros livros, artigos, apresenta\u00e7\u00f5es em confer\u00eancias e trabalhos escritos por alunos do ensino m\u00e9dio e da faculdade foram extra\u00eddos dos livros e revistas de livre acesso da cole\u00e7\u00e3o. As fontes que digitalizamos para acesso aberto e as consultas em larga escala que nossas plataformas permitem permitiram projetos de pesquisa ambiciosos e a produ\u00e7\u00e3o de novos conhecimentos.\n \n O MHDL tamb\u00e9m se envolve com um p\u00fablico mais amplo fora da academia. F\u00e3s de cinema, entusiastas de r\u00e1dio cl\u00e1ssico e genealogistas visitam nossos sites regularmente. Mantemos uma presen\u00e7a ativa nas m\u00eddias sociais. Nossos materiais digitalizados no Internet Archive foram visualizados mais de 14 milh\u00f5es de vezes.", "site": "http://mediahistoryproject.org/"}, {"nome": "association of moving image archivists (amia)", "descricao": "Associa\u00e7\u00e3o de Arquivistas de Imagens em Movimento", "site": "https://amianet.org/"}, {"nome": "Conselho de Coordena\u00e7\u00e3o de Audiovisual Arquivos Associa\u00e7\u00f5es", "descricao": "O CCAAA representa os interesses de organiza\u00e7\u00f5es profissionais de arquivo em todo o mundo com interesses em materiais audiovisuais, incluindo filmes, televis\u00e3o e r\u00e1dio transmitidos e grava\u00e7\u00f5es de \u00e1udio de todos os tipos. Embora trabalhemos predominantemente no setor p\u00fablico, refletimos uma ampla gama de interesses nos setores de m\u00eddia de transmiss\u00e3o, artes, patrim\u00f4nio, educa\u00e7\u00e3o e informa\u00e7\u00e3o. Os arquivistas profissionais que o CCAAA representa, em \u00faltima an\u00e1lise, trabalham em institui\u00e7\u00f5es como arquivos, bibliotecas e museus em n\u00edvel nacional e local, departamentos de ensino e pesquisa universit\u00e1rios e organiza\u00e7\u00f5es de transmiss\u00e3o.", "site": "http://www.ccaaa.org/"}, {"nome": "A Association of European Cinematheques", "descricao": "\u00e9 uma afilia\u00e7\u00e3o de 51 arquivos de filmes nacionais e regionais europeus. Sua fun\u00e7\u00e3o \u00e9 salvaguardar o patrim\u00f4nio cinematogr\u00e1fico europeu e tornar esses ricos registros audiovisuais coletados e preservados pelos v\u00e1rios arquivos de filmes acess\u00edveis ao p\u00fablico. A ACE \u00e9 uma filial regional da FIAF (F\u00e9d\u00e9ration Internationale des Archives du Film / Federa\u00e7\u00e3o Internacional de Arquivos de Filmes). Os membros da ACE s\u00e3o institui\u00e7\u00f5es sem fins lucrativos comprometidas com o C\u00f3digo de \u00c9tica da FIAF.", "site": "https://ace-film.eu/about-ace/about-ace/"}, {"nome": "Atlantahistorycenter", "descricao": "A Sociedade Hist\u00f3rica de Atlanta foi fundada em 1926 para preservar e estudar a hist\u00f3ria de Atlanta.\n Em 1990, ap\u00f3s d\u00e9cadas coletando, pesquisando e publicando informa\u00e7\u00f5es sobre Atlanta e a \u00e1rea ao redor, a organiza\u00e7\u00e3o se tornou oficialmente Atlanta History Center.", "site": "https://www.atlantahistorycenter.com/"}, {"nome": "vcientertainment", "descricao": "Provavelmente h\u00e1 muitos que ainda se perguntam: \"Quem \u00e9 a VCI?\" e \u00e0s vezes eu me pergunto a mesma coisa. Felizmente para voc\u00ea, talvez eu possa lan\u00e7ar um pouco de luz sobre esse assunto, porque estou aqui desde o in\u00edcio da empresa.", "site": "https://www.vcientertainment.com/about-us/"}, {"nome": " Ed Sullivan", "descricao": "A hist\u00f3ria de Ed Sullivan \u00e9 a de um homem cuja persona diante das c\u00e2meras era a de um mestre de cerim\u00f4nias impass\u00edvel e sem humor. No entanto, sua vida fora das telas era cheia de glamour, grandes alturas na carreira e a satisfa\u00e7\u00e3o pessoal de ser famoso. Ele tentou fazer um nome no cinema, amava a vida noturna de Nova York e era um \u00e1vido viajante do mundo. Ed levava a vida de uma celebridade exc\u00eantrica que vivia no Delmonico Hotel, sa\u00eda a noite toda e comia costeletas de porco no caf\u00e9 da manh\u00e3 tardio. Mas a maior reivindica\u00e7\u00e3o de Ed \u00e0 fama foi que ele apresentou o programa de variedades do hor\u00e1rio nobre mais longo da hist\u00f3ria da televis\u00e3o. A verdadeira hist\u00f3ria de Ed Sullivan \u00e9 um conto fascinante de um homem complexo que nunca foi contado.", "site": "https://www.edsullivan.com/about-ed-sullivan/"}], "Reino Unido": [{"nome": "O Institute of Contemporary Arts (ICA)", "descricao": "O Institute of Contemporary Arts (ICA) \u00e9 o principal espa\u00e7o de Londres para cultura contempor\u00e2nea. N\u00f3s encomendamos, produzimos e apresentamos novos trabalhos em cinema, m\u00fasica, performance e artes visuais dos artistas mais progressistas da atualidade. Em nossa casa hist\u00f3rica no The Mall, no centro de Londres, convidamos artistas e p\u00fablico a questionar o que significa viver em nosso mundo hoje, com um programa fluido de g\u00eanero que desafia o passado, questiona o presente e confronta o futuro.", "site": "https://www.ica.art/about"}, {"nome": "A Primetime Video", "descricao": "A Primetime Video Productions produz v\u00eddeos e programas em DVD para entusiastas e amantes da nostalgia h\u00e1 mais de 30 anos. Nossos programas em DVD usam filmes de cinema modernos e de arquivo para transportar o espectador a dias passados.", "site": "https://www.primetimevideo.co.uk/"}, {"nome": "Regionaal Archief Tilburg", "descricao": "O site RegionaalArchiefTilburg \u00e9 o arquivo regional da cidade de Tilburg, nos Pa\u00edses Baixos. Ele preserva e disponibiliza documentos hist\u00f3ricos de valor cultural e administrativo relacionados a Tilburg e seus arredores.Documentos hist\u00f3ricos: registros civis, cart\u00f3rios, mapas antigos e fotografias.\n Genealogia: informa\u00e7\u00f5es para pesquisa de \u00e1rvores geneal\u00f3gicas, como registros de nascimento, casamento e \u00f3bito.\n Cole\u00e7\u00f5es digitais: arquivos digitalizados, como jornais e outros registros hist\u00f3ricos.\n Eventos e exposi\u00e7\u00f5es: atividades relacionadas \u00e0 hist\u00f3ria local e preserva\u00e7\u00e3o cultural.", "site": "https://www.regionaalarchieftilburg.nl/"}], "Noruega": [{"nome": "Nasjonalbiblioteket (Biblioteca Nacional da Noruega) (Noruega) Site", "descricao": "A Biblioteca Nacional preserva, digitaliza e divulga tudo o que \u00e9 publicado para o p\u00fablico noruegu\u00eas. Em Mo i Rana, o acervo da Biblioteca Nacional \u00e9 protegido em grandes sal\u00f5es nas montanhas, f\u00edsica e digitalmente. O patrim\u00f4nio cultural documentado de arquivos, museus e bibliotecas noruegueses tamb\u00e9m \u00e9 digitalizado e preservado.", "site": "https://www.nb.no"}], "It\u00e1lia": [{"nome": "Museo nazionale del Cinema", "descricao": "Arquivo hist\u00f3rico: Complexo documental de riqueza \u00edmpar e de interesse pela consist\u00eancia e conte\u00fado, o Arquivo preserva elementos \u00fanicos e in\u00e9ditos para a hist\u00f3ria do cinema: milhares de documentos que testemunham a vida e actividade de companhias, realizadores, argumentistas, actores e t\u00e9cnicos do cinema mudo e som, italiano e estrangeiro", "site": "https://www.museocinema.it/it"}], "Holanda": [{"nome": "Centro Hist\u00f3rico Regional Eindhoven", "descricao": "O RHCe surgiu por volta da virada do s\u00e9culo a partir dos arquivos regionais da regi\u00e3o de Eindhoven, dos arquivos municipais de Helmond e dos arquivos regionais de Peelland. Isto resultou em economias de escala significativas em termos de custos, conhecimento e espa\u00e7o ocupado. Desde 2015, o RHCe est\u00e1 organizado em conjunto com o servi\u00e7o da Regi\u00e3o Metropolitana de Eindhoven num organismo p\u00fablico: a Regi\u00e3o Metropolitana de Eindhoven. As organiza\u00e7\u00f5es est\u00e3o instaladas em um pr\u00e9dio especial de 2000.", "site": "https://www.rhc-eindhoven.nl/"}]};
+
+        // Função para verificar o login
+        function verificarLogin() {
+            var username = document.getElementById("username").value;
+            var password = document.getElementById("password").value;
+            var loginError = document.getElementById("login-error");
+
+            if (username === "imagemdearquivo" && password === "1978") {
+                // Esconde o overlay de login
+                document.getElementById("login-overlay").style.display = "none";
+                // Mostra o mapa e os painéis
+                document.getElementById("map").style.display = "block";
+                document.getElementById("acervo-list").style.display = "block";
+                document.getElementById("acervo-detail").style.display = "block";
+            } else {
+                loginError.textContent = "Usuário ou senha incorretos!";
+            }
+        }
+
+        // Função para carregar os acervos de um país no painel da lista
+        function loadAcervos(pais) {
+            var listDiv = document.getElementById("acervo-list");
+            listDiv.innerHTML = "<h4>Acervos de " + pais + "</h4>";
+            if(acervos_data[pais]) {
+                acervos_data[pais].forEach(function(acervo) {
+                    var a = document.createElement("a");
+                    a.href = "#";
+                    a.textContent = acervo.nome;
+                    a.style.display = "block";
+                    a.style.marginBottom = "5px";
+                    a.onclick = function() {
+                        showAcervoDetail(acervo);
+                    };
+                    listDiv.appendChild(a);
+                });
+            } else {
+                listDiv.innerHTML += "<p>Nenhum acervo encontrado.</p>";
+            }
+        }
+
+        // Função para exibir os detalhes do acervo no painel de detalhes
+        function showAcervoDetail(acervo) {
+            var detailDiv = document.getElementById("acervo-detail");
+            detailDiv.innerHTML = "<h4>" + acervo.nome + "</h4>" +
+                                  "<p><b>Descrição:</b> " + acervo.descricao + "</p>" +
+                                  "<p><a href='" + acervo.site + "' target='_blank'>Visitar site</a></p>";
+
+            // Tenta carregar o iframe
+            var iframe = document.createElement('iframe');
+            iframe.src = acervo.site;
+            iframe.style.width = '100%';
+            iframe.style.height = '600px';
+            iframe.style.border = 'none';
+            
+            // Se não carregar, exibe a mensagem
+            iframe.onerror = function() {
+                detailDiv.innerHTML += "<p><strong>Este site não pode ser exibido aqui devido a restrições de segurança. Clique no link acima para visitar diretamente.</strong></p>";
+            };
+            
+            // Tenta adicionar o iframe
+            detailDiv.appendChild(iframe);
+        }
+        </script>
+    </body>
+    </html>
+    
+    
+            <div class="folium-map" id="map_3ee2a657d7ab0415ba60d59fdf4805a9" ></div>
+        
+</body>
+<script>
+    
+    
+            var map_3ee2a657d7ab0415ba60d59fdf4805a9 = L.map(
+                "map_3ee2a657d7ab0415ba60d59fdf4805a9",
+                {
+                    center: [40.0, -30.0],
+                    crs: L.CRS.EPSG3857,
+                    ...{
+  "zoom": 3,
+  "zoomControl": true,
+  "preferCanvas": false,
+}
+
+                }
+            );
+
+            
+
+        
+    
+            var tile_layer_5c7b7eb3df7aa3aa2409ba9596f41c58 = L.tileLayer(
+                "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                {
+  "minZoom": 0,
+  "maxZoom": 19,
+  "maxNativeZoom": 19,
+  "noWrap": false,
+  "attribution": "\u0026copy; \u003ca href=\"https://www.openstreetmap.org/copyright\"\u003eOpenStreetMap\u003c/a\u003e contributors",
+  "subdomains": "abc",
+  "detectRetina": false,
+  "tms": false,
+  "opacity": 1,
+}
+
+            );
+        
+    
+            tile_layer_5c7b7eb3df7aa3aa2409ba9596f41c58.addTo(map_3ee2a657d7ab0415ba60d59fdf4805a9);
+        
+    
+            var marker_6f3c614c2a3feae1846cf1f9229ae737 = L.marker(
+                [46.603354, 1.888334],
+                {
+}
+            ).addTo(map_3ee2a657d7ab0415ba60d59fdf4805a9);
+        
+    
+        var popup_d755fc585cfcf242256e830a9175bcd7 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_8b36871357f5caa055c7c3baaf937245 = $(`<div id="html_8b36871357f5caa055c7c3baaf937245" style="width: 100.0%; height: 100.0%;"><a href='#' onclick="loadAcervos('França'); return false;">Ver acervos de França</a></div>`)[0];
+                popup_d755fc585cfcf242256e830a9175bcd7.setContent(html_8b36871357f5caa055c7c3baaf937245);
+            
+        
+
+        marker_6f3c614c2a3feae1846cf1f9229ae737.bindPopup(popup_d755fc585cfcf242256e830a9175bcd7)
+        ;
+
+        
+    
+    
+            marker_6f3c614c2a3feae1846cf1f9229ae737.bindTooltip(
+                `<div>
+                     França (4 acervo(s))
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var marker_c8ded7415c6c6eb477fd54a99979f9d2 = L.marker(
+                [51.1657, 10.4515],
+                {
+}
+            ).addTo(map_3ee2a657d7ab0415ba60d59fdf4805a9);
+        
+    
+        var popup_27a34afe3241617d4108d1248db29c3f = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_c8f1bcacd8069750e5e1710bd14c890f = $(`<div id="html_c8f1bcacd8069750e5e1710bd14c890f" style="width: 100.0%; height: 100.0%;"><a href='#' onclick="loadAcervos('Alemanha'); return false;">Ver acervos de Alemanha</a></div>`)[0];
+                popup_27a34afe3241617d4108d1248db29c3f.setContent(html_c8f1bcacd8069750e5e1710bd14c890f);
+            
+        
+
+        marker_c8ded7415c6c6eb477fd54a99979f9d2.bindPopup(popup_27a34afe3241617d4108d1248db29c3f)
+        ;
+
+        
+    
+    
+            marker_c8ded7415c6c6eb477fd54a99979f9d2.bindTooltip(
+                `<div>
+                     Alemanha (9 acervo(s))
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var marker_9bb868c714d284d132eb4d231c9ebd69 = L.marker(
+                [37.0902, -95.7129],
+                {
+}
+            ).addTo(map_3ee2a657d7ab0415ba60d59fdf4805a9);
+        
+    
+        var popup_e02b331e4fde7a10dd6f5d3ffbdf336d = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_199548d8788774b3fa57e00b98f70002 = $(`<div id="html_199548d8788774b3fa57e00b98f70002" style="width: 100.0%; height: 100.0%;"><a href='#' onclick="loadAcervos('EUA'); return false;">Ver acervos de EUA</a></div>`)[0];
+                popup_e02b331e4fde7a10dd6f5d3ffbdf336d.setContent(html_199548d8788774b3fa57e00b98f70002);
+            
+        
+
+        marker_9bb868c714d284d132eb4d231c9ebd69.bindPopup(popup_e02b331e4fde7a10dd6f5d3ffbdf336d)
+        ;
+
+        
+    
+    
+            marker_9bb868c714d284d132eb4d231c9ebd69.bindTooltip(
+                `<div>
+                     EUA (7 acervo(s))
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var marker_1e023e34f07ef6443b9315ef36a907c4 = L.marker(
+                [55.3781, -3.436],
+                {
+}
+            ).addTo(map_3ee2a657d7ab0415ba60d59fdf4805a9);
+        
+    
+        var popup_d7a53c09224a1c3925e92cdab0330a51 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_70ad85d00d3d9847b04416f339ffb41b = $(`<div id="html_70ad85d00d3d9847b04416f339ffb41b" style="width: 100.0%; height: 100.0%;"><a href='#' onclick="loadAcervos('Reino Unido'); return false;">Ver acervos de Reino Unido</a></div>`)[0];
+                popup_d7a53c09224a1c3925e92cdab0330a51.setContent(html_70ad85d00d3d9847b04416f339ffb41b);
+            
+        
+
+        marker_1e023e34f07ef6443b9315ef36a907c4.bindPopup(popup_d7a53c09224a1c3925e92cdab0330a51)
+        ;
+
+        
+    
+    
+            marker_1e023e34f07ef6443b9315ef36a907c4.bindTooltip(
+                `<div>
+                     Reino Unido (3 acervo(s))
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var marker_192824019b98ec957f8e8b4acf81ee17 = L.marker(
+                [60.472, 8.4689],
+                {
+}
+            ).addTo(map_3ee2a657d7ab0415ba60d59fdf4805a9);
+        
+    
+        var popup_43e82eae76032a8f6a4043235d210781 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_9932d1b48068d6250676546995e7b623 = $(`<div id="html_9932d1b48068d6250676546995e7b623" style="width: 100.0%; height: 100.0%;"><a href='#' onclick="loadAcervos('Noruega'); return false;">Ver acervos de Noruega</a></div>`)[0];
+                popup_43e82eae76032a8f6a4043235d210781.setContent(html_9932d1b48068d6250676546995e7b623);
+            
+        
+
+        marker_192824019b98ec957f8e8b4acf81ee17.bindPopup(popup_43e82eae76032a8f6a4043235d210781)
+        ;
+
+        
+    
+    
+            marker_192824019b98ec957f8e8b4acf81ee17.bindTooltip(
+                `<div>
+                     Noruega (1 acervo(s))
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var marker_7ea07eed32d76e84237389b2c6980f20 = L.marker(
+                [41.87194, 12.56738],
+                {
+}
+            ).addTo(map_3ee2a657d7ab0415ba60d59fdf4805a9);
+        
+    
+        var popup_1eb08890c315886fb061bcd7a222a8de = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_5aed1ed670ab1a92955b80b2ece413e7 = $(`<div id="html_5aed1ed670ab1a92955b80b2ece413e7" style="width: 100.0%; height: 100.0%;"><a href='#' onclick="loadAcervos('Itália'); return false;">Ver acervos de Itália</a></div>`)[0];
+                popup_1eb08890c315886fb061bcd7a222a8de.setContent(html_5aed1ed670ab1a92955b80b2ece413e7);
+            
+        
+
+        marker_7ea07eed32d76e84237389b2c6980f20.bindPopup(popup_1eb08890c315886fb061bcd7a222a8de)
+        ;
+
+        
+    
+    
+            marker_7ea07eed32d76e84237389b2c6980f20.bindTooltip(
+                `<div>
+                     Itália (1 acervo(s))
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var marker_5b138dc975e919c071062c47bc91b65c = L.marker(
+                [52.3784, 4.9009],
+                {
+}
+            ).addTo(map_3ee2a657d7ab0415ba60d59fdf4805a9);
+        
+    
+        var popup_1ff105094ebd5c401b309494179cfdfe = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_d93e9903fac7e78c3a14dee64875cea9 = $(`<div id="html_d93e9903fac7e78c3a14dee64875cea9" style="width: 100.0%; height: 100.0%;"><a href='#' onclick="loadAcervos('Holanda'); return false;">Ver acervos de Holanda</a></div>`)[0];
+                popup_1ff105094ebd5c401b309494179cfdfe.setContent(html_d93e9903fac7e78c3a14dee64875cea9);
+            
+        
+
+        marker_5b138dc975e919c071062c47bc91b65c.bindPopup(popup_1ff105094ebd5c401b309494179cfdfe)
+        ;
+
+        
+    
+    
+            marker_5b138dc975e919c071062c47bc91b65c.bindTooltip(
+                `<div>
+                     Holanda (1 acervo(s))
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+</script>
+</html>
