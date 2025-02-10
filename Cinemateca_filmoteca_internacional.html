@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    
+        <script>
+            L_NO_TOUCH = false;
+            L_DISABLE_3D = false;
+        </script>
+    
+    <style>html, body {width: 100%;height: 100%;margin: 0;padding: 0;}</style>
+    <style>#map {position:absolute;top:0;bottom:0;right:0;left:0;}</style>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/python-visualization/folium/folium/templates/leaflet.awesome.rotate.min.css"/>
+    
+            <meta name="viewport" content="width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <style>
+                #map_dbb12d686361d032d4f09b3cecf561f2 {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+                .leaflet-container { font-size: 1rem; }
+            </style>
+        
+</head>
+<body>
+    
+    
+    <!DOCTYPE html>
+    <html lang="pt-BR">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Mapa Interativo</title>
+        <style>
+          /* Estilo para o formulário de login */
+          #login-overlay {
+              position: fixed;
+              top: 0;
+              left: 0;
+              width: 100%;
+              height: 100%;
+              background-color: rgba(0, 0, 0, 0.8);
+              z-index: 9999;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+          }
+          #login-box {
+              background-color: white;
+              padding: 20px;
+              border-radius: 10px;
+              text-align: center;
+          }
+          #login-box input {
+              margin: 10px 0;
+              padding: 10px;
+              width: 80%;
+          }
+          #login-box button {
+              padding: 10px 20px;
+              background-color: #4CAF50;
+              color: white;
+              border: none;
+              border-radius: 5px;
+              cursor: pointer;
+          }
+          #login-box button:hover {
+              background-color: #45a049;
+          }
+          #login-error {
+              color: red;
+              margin-top: 10px;
+          }
+
+          /* Estilo para os painéis do mapa */
+          #acervo-list {
+              position: fixed;
+              top: 10px;
+              left: 10px;
+              width: 350px;
+              height: 90%;
+              overflow-y: auto;
+              background-color: white;
+              z-index: 1000;
+              padding: 10px;
+              border: 2px solid black;
+              font-size: 18px;
+              display: none;
+          }
+          #acervo-detail {
+              position: fixed;
+              top: 10px;
+              right: 10px;
+              width: 50%;
+              height: 80%;
+              overflow-y: auto;
+              background-color: white;
+              z-index: 2000;
+              padding: 10px;
+              border: 4px solid black;
+              font-size: 18px;
+              display: none;
+          }
+          #acervo-detail iframe {
+              width: 100%;
+              height: 600px;
+              border: none;
+          }
+          .destaque {
+              font-size: 24px;
+              font-weight: bold;
+              color: #2d2d2d;
+              text-align: center;
+              margin-bottom: 20px;
+          }
+        </style>
+    </head>
+    <body>
+        <!-- Overlay de login -->
+        <div id="login-overlay">
+            <div id="login-box">
+                <h2>Login</h2>
+                <input type="text" id="username" placeholder="Usuário">
+                <input type="password" id="password" placeholder="Senha">
+                <button onclick="verificarLogin()">Entrar</button>
+                <div id="login-error"></div>
+            </div>
+        </div>
+
+        <!-- Painel da lista de acervos -->
+        <div id="acervo-list">
+          <div class="destaque">Olá Usuário! Clique em qualquer região no mapa para carregar a lista de instituições!</div>
+          <p><span style="font-size: 18px;">Última atualização: FEV.2025.</span></p>
+        </div>
+
+        <!-- Painel de detalhes do acervo -->
+        <div id="acervo-detail">
+          <div class="destaque">Ao passar o mouse sobre o nome da instituição, os detalhes serão exibidos aqui! Mas atenção: alguns sites possuem proteções de segurança.</div>
+          <p><span style="font-size: 18px;">Caso o site não seja exibido, clique em VISITAR SITE.</span></p>
+          <p><span style="font-size: 18px;">Última atualização: FEV.2025.</span></p>
+        </div>
+
+        <!-- Mapa -->
+        <div id="map" style="display: none;"></div>
+
+        <script>
+        // Dados dos acervos, injetados a partir do Python
+        var acervos_data = {"Fran\u00e7a": [{"nome": "Cin\u00e9math\u00e8que fran\u00e7aise", "descricao": "A Cin\u00e9math\u00e8que fran\u00e7aise d\u00e1 tanta import\u00e2ncia aos filmes como a tudo o que se relaciona com o cinema (arquivos, livros, peri\u00f3dicos, c\u00e2maras, figurinos, cartazes, maquetes, etc.). Gra\u00e7as a esse pioneirismo, a institui\u00e7\u00e3o reuniu, ao longo dos anos, um impressionante acervo de filmes, arquivos e dispositivos. Pela sua originalidade, pela sua singularidade e pela sua abrang\u00eancia, esta cole\u00e7\u00e3o constitui um recurso inesgot\u00e1vel para o estudo da arte e da ind\u00fastria cinematogr\u00e1fica. Quase todos os pa\u00edses est\u00e3o representados, desde a arte silenciosa francesa, italiana e sovi\u00e9tica at\u00e9 os cl\u00e1ssicos de Hollywood, incluindo o cinema experimental e o cinema contempor\u00e2neo. \u00c9 uma cole\u00e7\u00e3o \u00fanica, fr\u00e1gil, com suportes extremamente variados e de preserva\u00e7\u00e3o delicada, que \u00e9 regularmente enriquecida com pe\u00e7as excecionais.", "site": "https://www.cinematheque.fr/les-collections-de-la-cinematheque-francaise.html"}, {"nome": "Cin\u00e9-Archives", "descricao": "Toda esta cole\u00e7\u00e3o pinta um retrato da classe trabalhadora francesa do s\u00e9culo XX . Al\u00e9m de analisar os principais acontecimentos pol\u00edticos, econ\u00f3micos e sociais da actualidade, os filmes fornecem um testemunho valioso da \u201ccontracultura\u201d incentivada pelo PCF desde o per\u00edodo entre guerras. Desde a d\u00e9cada de 1920, o Partido Comunista Franc\u00eas produz e distribui um grande n\u00famero de filmes, para apoiar movimentos sociais, divulgar as teorias e orienta\u00e7\u00f5es do Partido a activistas e simpatizantes ou mesmo participar em trabalhos de educa\u00e7\u00e3o de massa. O Partido Comunista dotou-se assim muito rapidamente de estruturas de produ\u00e7\u00e3o e distribui\u00e7\u00e3o cinematogr\u00e1fica, colocadas \u00e0 disposi\u00e7\u00e3o de diversas organiza\u00e7\u00f5es do movimento oper\u00e1rio com as quais partilhava proximidade: a CGT , os munic\u00edpios oper\u00e1rios , organiza\u00e7\u00f5es de massas como a Secours Popular , o Movimento contra o Racismo . e pela Amizade entre os Povos (MRAP), a Federa\u00e7\u00e3o do Trabalho de Esportes e Gin\u00e1stica (FSGT) ou a Uni\u00e3o das Mulheres Francesas (UFF).", "site": "https://www.cinearchives.org/"}, {"nome": "Amorce (rede Diazinteregio)", "descricao": "Amorce , a plataforma da rede Diazinteregio.\n \n Diazinteregio, a rede de mem\u00f3ria cinematogr\u00e1fica dos territ\u00f3rios Desde 2010, a associa\u00e7\u00e3o DIAZINTEREGIO re\u00fane centros de arquivo e cinematecas de l\u00edngua francesa em torno da mem\u00f3ria f\u00edlmica dos territ\u00f3rios e da sua ferramenta de gest\u00e3o de cole\u00e7\u00f5es, DIAZ. 19 estruturas e cerca de 70 colaboradores participam na vida ativa da rede e constituem um acervo de mais de 150.000 meios audiovisuais.UMA REDE MUTUALISTA E SOLID\u00c1RIAO Diazinteregio proporciona, ao congregar as pr\u00e1ticas e metodologias dos seus membros, um lugar \u00fanico de partilha de conhecimentos, forma\u00e7\u00e3o e concep\u00e7\u00e3o de projetos em torno da mem\u00f3ria f\u00edlmica dos territ\u00f3rios .", "site": "https://www.amorce.eu/recherche-878-0-0-0.html"}, {"nome": "Cin\u00e9math\u00e8que fran\u00e7aise", "descricao": "A Cin\u00e9math\u00e8que fran\u00e7aise d\u00e1 tanta import\u00e2ncia aos filmes como a tudo o que se relaciona com o cinema (arquivos, livros, peri\u00f3dicos, c\u00e2maras, figurinos, cartazes, maquetes, etc.). Gra\u00e7as a esse pioneirismo, a institui\u00e7\u00e3o reuniu, ao longo dos anos, um impressionante acervo de filmes, arquivos e dispositivos. Pela sua originalidade, pela sua singularidade e pela sua abrang\u00eancia, esta cole\u00e7\u00e3o constitui um recurso inesgot\u00e1vel para o estudo da arte e da ind\u00fastria cinematogr\u00e1fica. Quase todos os pa\u00edses est\u00e3o representados, desde a arte silenciosa francesa, italiana e sovi\u00e9tica at\u00e9 os cl\u00e1ssicos de Hollywood, incluindo o cinema experimental e o cinema contempor\u00e2neo. \u00c9 uma cole\u00e7\u00e3o \u00fanica, fr\u00e1gil, com suportes extremamente variados e de preserva\u00e7\u00e3o delicada, que \u00e9 regularmente enriquecida com pe\u00e7as excecionais.oPara facilitar sua busca, oferecemos alguns atalhos para as se\u00e7\u00f5es principais: A Filmoteca: apresenta\u00e7\u00e3o e informa\u00e7\u00f5es pr\u00e1ticas http://www.cinematheque.fr/fr/bibliotheque-film/services-sur-place11.html Doa\u00e7\u00f5es, aquisi\u00e7\u00f5es, restaura\u00e7\u00f5es: novidades sobre cole\u00e7\u00f5es http://www.cinematheque.fr/fr/musee-collections/actualite-collections.html Recursos on-line: Zooms: http://www.cinematheque.fr/fr/musee-collections/zooms.html Exposi\u00e7\u00f5es virtuais: http://www.cinematheque.fr/fr/expositions-cinema/expositions-virtuelles.html Sites de document\u00e1rios: http://www.cinematheque.fr/fr/bibliotheque-film/services-sur-place111/sites-documentaires.html Diret\u00f3rios por cole\u00e7\u00f5es: http://www.cinematheque.fr/fr/bibliotheque-film/services-sur-place111/repertoires.html Pesquise nas cole\u00e7\u00f5es: http://www.cineressources.net/recherche_t.php", "site": "https://www.cinematheque.fr/les-collections-de-la-cinematheque-francaise.html"}, {"nome": "Cin\u00e9math\u00e8que de Toulouse ", "descricao": "Filmes, cartazes, fotos, revistas, livros sobre cinema... As cole\u00e7\u00f5es preservadas pela Cinemateca de Toulouse cobrem toda a hist\u00f3ria do cinema, desde suas origens at\u00e9 os dias atuais. E eles continuam ficando mais ricos. Durante cinquenta anos, la\u00e7os profundos de trabalho e amizade com os maiores arquivos internacionais incentivaram doa\u00e7\u00f5es, dep\u00f3sitos e trocas. Membro da FIAF (Federa\u00e7\u00e3o Internacional de Arquivos Cinematogr\u00e1ficos) desde sua cria\u00e7\u00e3o, a Cinemateca \u00e9 reconhecida nacional e internacionalmente por seu comprometimento e compet\u00eancia na conserva\u00e7\u00e3o e restaura\u00e7\u00e3o do patrim\u00f4nio cinematogr\u00e1fico. O acervo de filmes \u2013 aproximadamente 53.000 c\u00f3pias inventariadas \u2013 abrange todos os g\u00eaneros, nacionalidades e \u00e9pocas. No entanto, ao longo do tempo, surgiram centros de excel\u00eancia: cinema franc\u00eas, cinema russo e sovi\u00e9tico, cinema americano cl\u00e1ssico, cinema latino-americano, cinema regional, filmes de g\u00eanero, filmes sobre arte e document\u00e1rios. Atualmente, apenas parte das cole\u00e7\u00f5es consta do cat\u00e1logo nacional coordenado pelo CNC (Centro Nacional de Cinema e Imagem Animada).\n\n", "site": "https://www.lacinemathequedetoulouse.com"}, {"nome": "Cin\u00e9math\u00e8que de Nice (Fran\u00e7a)", "descricao": "A Cinemateca de Nice foi criada em 1976 por Odile Chapel com o apoio de Henri Langlois , pioneiro na conserva\u00e7\u00e3o e restaura\u00e7\u00e3o de filmes e fundador, com o cineasta Georges Franju, da Cinemateca Francesa. Foi inaugurado em 3 de julho de 1976 na presen\u00e7a do ator e diretor Denis Hopper.Inicialmente uma delega\u00e7\u00e3o permanente da Cinemateca Francesa, o estatuto jur\u00eddico da Cinemateca evoluiu ao longo dos anos at\u00e9 se tornar um estabelecimento cultural municipal em 1991 . Desde fevereiro de 2021, \u00e9 dirigido por Maryam Rousta-Giroud , diretora do Cin\u00e9ma et Studios de la Victorine na cidade de Nice.", "site": "https://www.cinematheque-nice.com"}, {"nome": "Cin\u00e9math\u00e8que de Bretagne (Fran\u00e7a)", "descricao": "\nTrinta anos ap\u00f3s sua cria\u00e7\u00e3o, a Cinemateca da Bretanha se tornou um dos fundos regionais mais importantes da Fran\u00e7a. Ela viu suas pr\u00e1ticas evolu\u00edrem e se adaptou \u00e0s novas t\u00e9cnicas nas quais se baseiam a preserva\u00e7\u00e3o e a promo\u00e7\u00e3o de filmes amadores. Para entender esse desenvolvimento, \u00e9 necess\u00e1rio relembrar o nascimento deste projeto e os desafios das miss\u00f5es da Cinemateca da Bretanha: a coleta, a preserva\u00e7\u00e3o e a distribui\u00e7\u00e3o dos filmes a ela confiados.\n\n ", "site": "https://www.cinematheque-bretagne.fr"}, {"nome": "Centre national du cin\u00e9ma et de l'image anim\u00e9e", "descricao": "O Arquivo do Cinema Franc\u00eas faz parte do departamento de patrim\u00f4nio cinematogr\u00e1fico do CNC. Al\u00e9m da sua miss\u00e3o principal de conserva\u00e7\u00e3o, restauro e salvaguarda, existe uma miss\u00e3o global de promo\u00e7\u00e3o dos fundos, dentro de um quadro jur\u00eddico adequado. Como tal, o site do CNC French Film Archives www.cnc-aff.fr responde a um imperativo essencial: dar a conhecer as cole\u00e7\u00f5es e torn\u00e1-las acess\u00edveis quando os acordos legais com os depositantes e titulares de direitos o autorizarem. Inclui nomeadamente 17.000 longas e curtas-metragens de fic\u00e7\u00e3o, maioritariamente franceses, incluindo filmes depositados em dep\u00f3sito legal desde 1977 e tamb\u00e9m 3.000 document\u00e1rios. Coletado, inventariado e salvo pelo departamento de patrim\u00f4nio da CNC.", "site": "https://www.cnc.fr"}, {"nome": "Comit\u00e9 du film ethnographique (Jean Rouch)", "descricao": "O Comit\u00ea de Cinema Etnogr\u00e1fico (CFE), fundado no Mus\u00e9e de l'Homme em 1953, \u00e9 uma associa\u00e7\u00e3o sob a lei de 1901 reconhecida como de interesse geral desde 2007. Esta associa\u00e7\u00e3o vem do Comit\u00ea Internacional de Cinema Etnogr\u00e1fico e Sociol\u00f3gico, criado em 1952 por iniciativa da UNESCO, bem como documentaristas e etn\u00f3logos (Jean Rouch, Luc de Heusch, Andr\u00e9 Leroi-Gourhan, etc.). O Festival Internacional Jean Rouch \u00e9 um dos mais importantes eventos europeus de cinema document\u00e1rio ligado \u00e0s ci\u00eancias humanas e sociais. Fundada em 1982 pelo cineasta e etn\u00f3logo Jean Rouch (1917-2004), apresenta anualmente em Paris, no m\u00eas de maio, mais de 70 document\u00e1rios programados em sele\u00e7\u00e3o oficial ou em sess\u00f5es tem\u00e1ticas. A entrada em todas as sess\u00f5es e eventos \u00e9 gratuita.\n O Festival continua com exibi\u00e7\u00f5es externas ao longo do ano na Fran\u00e7a e no exterior.", "site": "https://www.comitedufilmethnographique.com/archives/"}, {"nome": "film documentaire", "descricao": "A plataforma de pesquisa e informa\u00e7\u00e3o de document\u00e1rios. Criado em 2007, film-documentaire.fr \u00e9 uma plataforma dedicada \u00e0 referencia\u00e7\u00e3o da cria\u00e7\u00e3o documental franc\u00f3fona e internacional. Destinado a profissionais e ao p\u00fablico, \u00e9 uma ferramenta de interesse geral ao servi\u00e7o do cinema documental e audiovisual, na multiplicidade das suas formas e est\u00e9ticas, de acesso aberto e gratuito. A sua equipa est\u00e1 dividida entre Lussas, dentro da vila documental e Paris. Sua base de dados, historicamente constru\u00edda em parceria com a Maison du doc \u200b\u200b\u200b\u200be a Doc Net Films, permite a busca de todo tipo de informa\u00e7\u00e3o \u2013 cr\u00e9ditos, titulares de direitos, recursos editoriais e bibliogr\u00e1ficos, etc. \u2013 entre 66.671 perfis de filmes, 102.019 criadores, 7.800 compositores, 800 festivais, 31.430 estruturas. A cada m\u00eas, 400 mil p\u00e1ginas s\u00e3o visualizadas.", "site": "http://www.film-documentaire.fr/"}, {"nome": "Lussas Doc", "descricao": "Lussas Doc \u2013 Os reis dos document\u00e1rios!", "site": "https://lussasdoc.com/"}, {"nome": "A Ag\u00eancia de Curtas-Metragens", "descricao": "A Ag\u00eancia de Curtas Metragens nasceu em 1983, da vontade de muitos profissionais (cineastas, produtoras, exibidores, festivais) de promover e desenvolver a distribui\u00e7\u00e3o de curtas-metragens, em todas as telas e para todos os p\u00fablicos. \u201cBiblioteca de curtas-metragens\u201d com mais de 15 mil t\u00edtulos em seu cat\u00e1logo, a Court Film Agency mant\u00e9m filmes \u2013 em filme ou digital \u2013 que lhe s\u00e3o submetidos por produtores ou diretores. Prossegue tamb\u00e9m uma pol\u00edtica de digitaliza\u00e7\u00e3o de obras, contando com a assist\u00eancia de digitaliza\u00e7\u00e3o do CNC desde 2012, e dos equipamentos de digitaliza\u00e7\u00e3o que adquiriu em 2018.", "site": "https://www.agencecm.com/fr/l-agence-du-court-metrage/qui-sommes-nous"}, {"nome": "Vid\u00e9adoc", "descricao": "Vid\u00e9adoc \u00e9 um centro de recursos destinado em particular aos autores de document\u00e1rios criativos e, de forma mais geral, a todas as pessoas que desejam progredir nas profiss\u00f5es de cinema, audiovisual e cria\u00e7\u00e3o digital. Vid\u00e9adoc oferece um servi\u00e7o de aconselhamento de reda\u00e7\u00e3o de document\u00e1rios", "site": "https://www.videadoc.com/lequipe/"}], "It\u00e1lia": [{"nome": "Cineteca Italiana- Spazio Oberdan", "descricao": "Fundada em 1947 por Luigi Comencini e Alberto Lattuada, a Cineteca Milano \u00e9 a mais antiga cinemateca italiana. Activa na \u00e1rea da conserva\u00e7\u00e3o, restauro e promo\u00e7\u00e3o de filmes, a Cineteca est\u00e1 entre os 5 arquivos cinematogr\u00e1ficos apoiados pelo fundo nacional de cinema. Atualmente possui um arquivo de mais de 40.000 t\u00edtulos de filmes em filme.", "site": "https://www.cinetecamilano.it/"}, {"nome": "Cineteca di Bologna", "descricao": "Os arquivos da Cineteca di Bologna s\u00e3o uma fonte inesgot\u00e1vel de conhecimento sobre cinema, um instrumento de investiga\u00e7\u00e3o primordial para quem pretende realizar um estudo especializado sobre a s\u00e9tima arte, estudantes, investigadores e profissionais do setor.", "site": "https://cinetecadibologna.it/archivi/"}, {"nome": "Cinetecadel Friuli", "descricao": "As origens da Cineteca del Friuli remontam \u00e0s exibi\u00e7\u00f5es itinerantes nas cidades de tendas que surgiram imediatamente a partir de 6 de maio de 1976: foi durante esses espet\u00e1culos tecnicamente improvisados \u200b\u200bque nasceu a ideia de um cineclube com sede permanente em Gemona. Em Fevereiro de 1977, independentemente do lema \u201cprimeiro as casas e depois as igrejas\u201d, fundamos o \u201cCinepopolare\u201d com o objectivo de reconstruir um dos dois cinemas da cidade. Passamos os fins de semana entre os escombros do antigo centro hist\u00f3rico de Gemona, destino de in\u00fameros visitantes e curiosos, pedindo dinheiro para podermos abrir um cinema com fins culturais. Conseguimos arrecadar cerca de 2.000.000 de liras.", "site": "http://www.cinetecadelfriuli.org/"}, {"nome": "Plataforma adessocinema", "descricao": "l Visionario de Udine, Cinemazero de Pordenone e La Cineteca del Friuli ativaram esta nova plataforma para levar filmes e document\u00e1rios do nosso territ\u00f3rio para sua casa. Uma sele\u00e7\u00e3o preciosa que oferecer\u00e1 novos t\u00edtulos todas as semanas.", "site": "https://www.adessocinema.it/"}, {"nome": "CinetecaNazionale CSC", "descricao": "Biblioteca Nacional de Cinema Cineteca Nazionale, a cinemateca nacional italiana, criada por lei estadual em 1949, \u00e9 o arquivo cinematogr\u00e1fico mais importante da It\u00e1lia e um dos principais arquivos cinematogr\u00e1ficos da Europa e do mundo. Est\u00e1 empenhada na restaura\u00e7\u00e3o do cinema italiano: grandes obras-primas e obras menos conhecidas s\u00e3o restauradas e projetadas todos os anos, de acordo com a complexa articula\u00e7\u00e3o da nossa cinematografia.", "site": "https://www.fondazionecsc.it/en/cineteca-nazionale/"}, {"nome": "Cineteca Nazionale (Roma) ", "descricao": "Cineteca Nazionale, a biblioteca nacional italiana de filmes, estabelecida por lei estadual em 1949, \u00e9 o arquivo cinematogr\u00e1fico mais importante da It\u00e1lia e est\u00e1 entre os maiores arquivos cinematogr\u00e1ficos da Europa e do mundo. Ela se dedica \u00e0 restaura\u00e7\u00e3o do cinema italiano: grandes obras-primas e obras menos conhecidas s\u00e3o restauradas e projetadas todos os anos, de acordo com a complexa articula\u00e7\u00e3o da nossa cinematografia.", "site": "https://www.fondazionecsc.it/en/cineteca-nazionale"}, {"nome": "Cineteca di Bologna ", "descricao": "Os arquivos da Cineteca de Bolonha s\u00e3o um lugar de salvaguarda do patrim\u00f4nio documental, fotogr\u00e1fico e cinematogr\u00e1fico: entidades p\u00fablicas e privadas, colecionadores, cr\u00edticos, autores, produtores e cineastas escolheram confiar seu patrim\u00f4nio \u00e0 Cineteca para que ele possa ser preservado, catalogados com cuidado e disponibilizados a acad\u00eamicos e pesquisadores.\nAl\u00e9m de sua voca\u00e7\u00e3o para a conserva\u00e7\u00e3o e apoio \u00e0 pesquisa, a Cineteca desempenha um papel ativo na divulga\u00e7\u00e3o e promo\u00e7\u00e3o desses materiais por meio de exposi\u00e7\u00f5es, projetos editoriais, eventos especiais e visitas guiadas.\nPara fins de estudo e pesquisa, os materiais preservados nos arquivos e fundos da Cineteca di Bologna podem ser consultados mediante solicita\u00e7\u00e3o (detalhes e contatos espec\u00edficos est\u00e3o contidos nos arquivos individuais).", "site": "https://cinetecadibologna.it/archivi"}, {"nome": "Cineteca di Milano ", "descricao": "Desde 1947, a Cineteca Milano preserva e valoriza o patrim\u00f4nio cinematogr\u00e1fico com cinemas de qualidade, um museu interativo, um arquivo que pode ser visitado com realidade aumentada e um laborat\u00f3rio de restaura\u00e7\u00e3o. Um centro cultural de difus\u00e3o da cultura cinematogr\u00e1fica, com uma preciosa biblioteca dedicada ao cinema.", "site": "https://www.cinetecamilano.it"}, {"nome": "Cineteca del Friuli ", "descricao": "Coincidindo com o lan\u00e7amento do arquivo cinematogr\u00e1fico Friuli Venezia Giulia, a Cineteca del Friuli assume a tarefa de torn\u00e1-lo totalmente eficaz, de acordo com as indica\u00e7\u00f5es do acordo com a institui\u00e7\u00e3o regional, iniciando este Servi\u00e7o, que deve tornar concretamente poss\u00edveis projetos planejados h\u00e1 muito tempo. De fato, o desafio de um arquivo n\u00e3o pode deixar de ser transformar seus fundamentos estruturais e a riqueza potencial dos materiais coletados diariamente em um fermento voltado para o futuro, capaz de atingir novos p\u00fablicos que n\u00e3o sejam apenas especialistas. As iniciativas de estudo e as opera\u00e7\u00f5es de restaura\u00e7\u00e3o prestam-se, de fato, a encontrar canais espetaculares e circula\u00e7\u00e3o intercultural.", "site": "https://www.cinetecadelfriuli.org"}, {"nome": "IstitutoLuce (Italien)", "descricao": "O MIAC \u2013 Museu Italiano do Audiovisual e do Cinema \u00e9 um museu multim\u00eddia no qual, atrav\u00e9s de experi\u00eancias imersivas, instala\u00e7\u00f5es interativas e reflex\u00f5es tem\u00e1ticas entre arte e cinema, \u00e9 poss\u00edvel conhecer o imenso patrim\u00f4nio audiovisual italiano. O museu, inaugurado em 2019, ocupa as salas dos edif\u00edcios originalmente utilizados para o laborat\u00f3rio de revela\u00e7\u00e3o e impress\u00e3o, o laborat\u00f3rio mec\u00e2nico e o armazenamento de filmes cinematogr\u00e1ficos.", "site": "https://cinecitta.com/"}, {"nome": "tvsvizzera", "descricao": "tvsvizzera.it nasceu em 2014 para preencher uma lacuna: permitir ao p\u00fablico italiano e de l\u00edngua italiana utilizar parte dos programas da Radiotelevisione della Svizzera italiana (RSI), possibilidade que desapareceu ap\u00f3s a transi\u00e7\u00e3o para o digital terrestre.", "site": "https://www.tvsvizzera.it/tvs/tvsvizzera/chi-siamo_tvsvizzera/42703014"}], "Alemanha": [{"nome": "StiftungDeutsche Kinemathek", "descricao": "O Film Archive do Deutsche Kinemathek cont\u00e9m obras de todas as eras da produ\u00e7\u00e3o cinematogr\u00e1fica alem\u00e3 e internacional. Isso inclui exemplos de todos os g\u00eaneros de filmes de longa-metragem e document\u00e1rios, bem como filmes experimentais, ef\u00eameros e amadores, como filmes caseiros, spots publicit\u00e1rios e trailers.", "site": "https://www.deutsche-kinemathek.de/en/collections-archives/our-archives"}, {"nome": "Babelsberg Film University ", "descricao": "Bem-vindo \u00e0 universidade de cinema. A Babelsberg Film University \u00e9 um lugar animado para o cinema; representa uma variedade de materiais e formas, g\u00eaneros e formatos, para especializa\u00e7\u00e3o e interc\u00e2mbio. Em nosso treinamento interdisciplinar e orientado para o com\u00e9rcio, personalidades criativas desenvolvem sua atitude cinematogr\u00e1fica. Ensinamos e pesquisamos tanto cient\u00edfica quanto artisticamente e, assim, moldamos ativamente o desenvolvimento da m\u00eddia, da ci\u00eancia e da sociedade.", "site": "https://www.filmuniversitaet.de/forschung-transfer/forschung"}, {"nome": "Deutsche Kinemathek (Berlim) ", "descricao": "O Deutsche Kinemathek \u2013 Museu do Cinema e da Televis\u00e3o\nA Deutsche Kinemathek \u00e9 uma das principais institui\u00e7\u00f5es da Europa dedicada ao patrim\u00f4nio audiovisual. Desde 2025, a cinemateca est\u00e1 localizada em um novo local, o E-Werk em Berlin-Mitte, enquanto o planejamento para uma nova sala de cinema continua.", "site": "https://www.deutsche-kinemathek.de"}, {"nome": "DFF \u2013 Deutsches Filminstitut & Filmmuseum Site ", "descricao": "O DFF \u2013 Instituto Alem\u00e3o de Cinema e Museu do Cinema \u00e9 uma importante institui\u00e7\u00e3o internacional de patrim\u00f4nio cinematogr\u00e1fico. Somos pioneiros na preserva\u00e7\u00e3o do patrim\u00f4nio cinematogr\u00e1fico e no compartilhamento da cultura cinematogr\u00e1fica com um p\u00fablico global. Para conseguir isso, combinamos de forma \u00fanica museus, cinemas, arquivos e cole\u00e7\u00f5es, festivais, plataformas digitais, projetos de pesquisa e digitaliza\u00e7\u00e3o, bem como in\u00fameras ofertas educacionais. Da metr\u00f3pole culturalmente diversa e din\u00e2mica de Frankfurt am Main, estamos trabalhando ativamente para moldar uma sociedade aberta. Mantemos relacionamentos com institui\u00e7\u00f5es e iniciativas de cinema e ci\u00eancia no mundo todo. Combinamos o significado material e hist\u00f3rico do filme com o futuro digital.", "site": "https://www.dff.film"}, {"nome": "EDITION FILMMUSEUM", "descricao": "EDITION FILMMUSEUM \u00e9 um projeto conjunto de arquivos de filmes e institui\u00e7\u00f5es culturais na parte de l\u00edngua alem\u00e3 da Europa. A sua ambi\u00e7\u00e3o \u00e9 publicar obras cinematogr\u00e1ficas de valor art\u00edstico, cultural e hist\u00f3rico em edi\u00e7\u00f5es de DVD que utilizem as possibilidades da m\u00eddia digital e atendam \u00e0s demandas de qualidade da profiss\u00e3o arquiv\u00edstica.", "site": "https://www.edition-filmmuseum.com/"}, {"nome": "Deutsche Kinemathek", "descricao": "Nos arquivos da Deutsche Kinemathek armazenamos centenas de milhares de objetos relacionados \u00e0 hist\u00f3ria do cinema e da televis\u00e3o: filmes, roteiros, fotos, cartazes, figurinos, equipamentos cinematogr\u00e1ficos e muito mais. Nosso novo portal de pesquisa permite pesquisar filmes e objetos individuais de nossas cole\u00e7\u00f5es. No momento n\u00e3o \u00e9 poss\u00edvel pesquisar estoques e pacotes - estamos trabalhando na integra\u00e7\u00e3o desta fun\u00e7\u00e3o.", "site": "https://www.deutsche-kinemathek.de/de"}], "Dinamarca": [{"nome": "DetDanske Filmmuseum (D\u00e4nemark)", "descricao": "Pesquise filmes, pessoas, empresas e m\u00fasicas\n No banco de dados de filmes, voc\u00ea pode pesquisar fatos sobre filmes, atores e cineastas desde o nascimento dos filmes dinamarqueses at\u00e9 os t\u00edtulos mais recentes do cinema e encontrar muitos trailers, clipes de filmes, fotos, p\u00f4steres e outros materiais. Pesquise entre mais de 40.000 t\u00edtulos, 140.000 nomes, 13.000 companhias, 4.000 pe\u00e7as musicais e 475 orquestras.", "site": "https://www.dfi.dk/"}, {"nome": "Det Danske Filminstitut (Copenhaga) ", "descricao": "Instituto Dinamarqu\u00eas de Cinema- apoia o desenvolvimento do cinema dinamarqu\u00eas e torna o nosso patrim\u00f3nio cinematogr\u00e1fico comum relevante e vivo", "site": "https://www.dfi.dk"}], "Hong Kong": [{"nome": "HongKong Film Archive", "descricao": "O Planning Office of the Hong Kong Film Archive foi formado em 1993, o que significa uma uni\u00e3o cada vez mais estreita entre a ind\u00fastria cinematogr\u00e1fica e o setor cultural. A casa permanente do Archive, localizada na orla de Sai Wan Ho, Hong Kong Island East, foi conclu\u00edda e inaugurada para uso p\u00fablico em janeiro de 2001. O edif\u00edcio tem cinco andares de altura, com uma \u00e1rea total de 7.200 metros quadrados. As instala\u00e7\u00f5es incluem um minicinema, um sal\u00e3o de exposi\u00e7\u00f5es, um centro de recursos, cofres de cole\u00e7\u00e3o e laborat\u00f3rios de restaura\u00e7\u00e3o.\n \n A aquisi\u00e7\u00e3o de artefatos f\u00edlmicos \u00e9 uma \u00e1rea importante do nosso trabalho. O Archive obt\u00e9m seus materiais principalmente por meio de doa\u00e7\u00f5es. Os materiais coletados s\u00e3o arquivados e indexados antes de serem disponibilizados ao p\u00fablico. Para aumentar a conscientiza\u00e7\u00e3o p\u00fablica sobre os tesouros cinematogr\u00e1ficos, o Archive realiza programas de filmes, exibi\u00e7\u00f5es, semin\u00e1rios e publica volumes monogr\u00e1ficos. Como Membro Pleno da Federa\u00e7\u00e3o Internacional de Arquivos de Filmes (FIAF), fazemos interc\u00e2mbios ativos com nossos colegas ao redor do mundo para nos mantermos atualizados sobre os \u00faltimos desenvolvimentos. Ser um arquivo de filmes de classe mundial dedicado \u00e0 conserva\u00e7\u00e3o e promo\u00e7\u00e3o do patrim\u00f4nio cinematogr\u00e1fico de Hong Kong, facilitando a pesquisa cinematogr\u00e1fica.", "site": "https://www.filmarchive.gov.hk/en/web/hkfa/about-us.html"}], "Irlanda": [{"nome": "IrishFilm Institute (Irland)", "descricao": "Sobre o Arquivo de Filmes Irlandeses \n O IFI Irish Film Archive adquire, preserva e disponibiliza o patrim\u00f4nio de imagens em movimento da Irlanda. IFI Irish Film Archive adquire, preserva e disponibiliza o patrim\u00f4nio de imagens em movimento da Irlanda, trabalhando para garantir que a rica e variada hist\u00f3ria cinematogr\u00e1fica da Irlanda, tanto amadora quanto profissional, seja protegida e acess\u00edvel para o benef\u00edcio das gera\u00e7\u00f5es atuais e futuras. Bobinas de filme, materiais digitais e cole\u00e7\u00f5es de documentos s\u00e3o mantidos em cofres personalizados e com controle de temperatura, projetados para o armazenamento de longo prazo de materiais de arquivo", "site": "https://ifi.ie/archive"}, {"nome": " Instituto Irland\u00eas de Cinema (Dublin) ", "descricao": "A cole\u00e7\u00e3o Archive \u00e9 um recurso cultural e hist\u00f3rico \u00fanico que reflete a produ\u00e7\u00e3o cinematogr\u00e1fica ind\u00edgena de 1897 at\u00e9 os dias atuais. A paisagem mut\u00e1vel da na\u00e7\u00e3o irlandesa foi capturada juntamente com atitudes, costumes e condi\u00e7\u00f5es sociais em mudan\u00e7a. Filmes amadores, cinejornais, eventos esportivos e sociais locais s\u00e3o preservados juntamente com longas-metragens e document\u00e1rios de luminares como Neil Jordan e Jim Sheridan. Os eventos sociais, pol\u00edticos e hist\u00f3ricos mais importantes do \u00faltimo s\u00e9culo s\u00e3o representados, enriquecendo nossa compreens\u00e3o deste per\u00edodo e nos permitindo conectar com nosso passado.", "site": "https://ifi.ie"}], "B\u00e9lgica": [{"nome": "Cin\u00e9math\u00e8que Royale de Belgique (Cinematek, Bruxelas) ", "descricao": "Com um dos maiores e mais ecl\u00e9ticos acervos cinematogr\u00e1ficos do mundo, a Real Cinemateca da B\u00e9lgica navega entre a express\u00e3o art\u00edstica de cineastas-autores, o entretenimento acess\u00edvel a um amplo p\u00fablico e a pesquisa cient\u00edfica com voca\u00e7\u00e3o hist\u00f3rica e social. A atua\u00e7\u00e3o da CINEMATEK se diferencia nestas tr\u00eas \u00e1reas; uma fun\u00e7\u00e3o de arquivo (a preserva\u00e7\u00e3o de longo prazo de toda a nossa cole\u00e7\u00e3o), uma fun\u00e7\u00e3o investigativa (promover pesquisas desta cole\u00e7\u00e3o) e uma fun\u00e7\u00e3o p\u00fablica (programar filmes desta cole\u00e7\u00e3o). Juntas, essas tr\u00eas \u00e1reas formam todo o campo de atua\u00e7\u00e3o da Real Cinemateca da B\u00e9lgica.", "site": "https://www.cinematek.be"}], "Espanha": [{"nome": " Filmoteca da Catalunha (Barcelona)", "descricao": "A Filmoteca da Catalunha garante a preserva\u00e7\u00e3o e a difus\u00e3o do patrim\u00f4nio audiovisual e da cultura cinematogr\u00e1fica, com especial \u00eanfase na l\u00edngua catal\u00e3. Suas atividades incluem a programa\u00e7\u00e3o de exibi\u00e7\u00f5es e exposi\u00e7\u00f5es, al\u00e9m da conserva\u00e7\u00e3o e restaura\u00e7\u00e3o de filmes, fotografias, m\u00fasicas, livros, revistas, cartazes e documentos cinematogr\u00e1ficos, bem como de pe\u00e7as museol\u00f3gicas pertencentes \u00e0 hist\u00f3ria do cinema.", "site": "https://www.filmoteca.cat"}, {"nome": "Filmoteca Espa\u00f1ola (Madri)", "descricao": "Desde 28 de fevereiro de 1989, o cinema Dor\u00e9 \u00e9 a sala de exibi\u00e7\u00e3o da Cinemateca Espanhola. Acolhe uma s\u00e9rie de eventos e atividades destinadas a promover o patrim\u00f4nio cinematogr\u00e1fico espanhol: apresenta\u00e7\u00f5es de livros, semin\u00e1rios, mesas redondas, sess\u00f5es com m\u00fasica ao vivo, debates e confer\u00eancias.", "site": "https://www.cultura.gob.es/cultura/areas/cine/mc/fe/cine-dore.html"}, {"nome": "Filmoteca Espa\u00f1ola (Espanha) ", "descricao": "Nasjonalbiblioteket (Biblioteca Nacional da Noruega) (Noruega) Site\tA Biblioteca Nacional preserva, digitaliza e divulga tudo o que \u00e9 publicado para o p\u00fablico noruegu\u00eas. Em Mo i Rana, o acervo da Biblioteca Nacional \u00e9 protegido em grandes sal\u00f5es nas montanhas, f\u00edsica e digitalmente. O patrim\u00f4nio cultural documentado de arquivos, museus e bibliotecas noruegueses tamb\u00e9m \u00e9 digitalizado e preservado.\tNoruega\twww.nb.no\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t", "site": "https://www.culturaydeporte.gob.es/cultura/areas/cine/mc/fe.html"}, {"nome": "Filmoteca da Catalunha (Espanha) ", "descricao": "A Filmoteca da Catalunha garante a preserva\u00e7\u00e3o e a difus\u00e3o do patrim\u00f4nio audiovisual e da cultura cinematogr\u00e1fica, com especial \u00eanfase na l\u00edngua catal\u00e3. Suas atividades incluem a programa\u00e7\u00e3o de exibi\u00e7\u00f5es e exposi\u00e7\u00f5es, al\u00e9m da conserva\u00e7\u00e3o e restaura\u00e7\u00e3o de filmes, fotografias, m\u00fasicas, livros, revistas, cartazes e documentos cinematogr\u00e1ficos, bem como de pe\u00e7as museol\u00f3gicas pertencentes \u00e0 hist\u00f3ria do cinema.Desde 2012, a Filmoteca da Catalunha conta com duas novas sedes destinadas a desempenhar suas pr\u00f3prias fun\u00e7\u00f5es. O Centro de Conserva\u00e7\u00e3o e Restaura\u00e7\u00e3o, no Parque Audiovisual de Terrassa , abriga o acervo cinematogr\u00e1fico, que atualmente conta com cerca de 40.000 t\u00edtulos, tanto em formato anal\u00f3gico quanto digital. O edif\u00edcio Raval , no centro de Barcelona, \u200b\u200bconta com duas salas de cinema, que programam cerca de 1.400 sess\u00f5es por ano, dois espa\u00e7os expositivos e a Cinemateca, que re\u00fane o maior acervo de livros, revistas e arquivos gr\u00e1ficos importantes da Catalunha. L\u00e1 tamb\u00e9m s\u00e3o realizadas atividades promovidas pelo Servi\u00e7o Educativo, visando incentivar a forma\u00e7\u00e3o de novos p\u00fablicos.", "site": "https://www.filmoteca.cat"}, {"nome": "Filmoteca Valenciana \u2013 Instituto Valenci\u00e0 de Cultura (Espanha) Site:", "descricao": "\nA Filmoteca Valenciana foi criada por decreto da Generalitat Valenciana em janeiro de 1985 com a miss\u00e3o de estudar, classificar, catalogar e conservar o patrim\u00f4nio audiovisual valenciano. Mas foi somente em Dezembro de 1986, com a sua integra\u00e7\u00e3o no Instituto Valenciano de Artes C\u00eanicas, Cinematografia e M\u00fasica (IVAECM), organismo aut\u00f4nomo dirigido por Carmen Alborch Bataller e dependente do Departamento de Cultura do Governo Valenciano, que come\u00e7ou a se constituir. se consolidou como uma cinemateca. , projetada e dirigida por Ricardo Mu\u00f1oz Suay, at\u00e9 o \u00e1pice de sua fase de funda\u00e7\u00e3o em 1988 com a instala\u00e7\u00e3o de sua sede no hist\u00f3rico edif\u00edcio Rialto na Plaza del Ayuntamiento em Val\u00eancia.At\u00e9 ent\u00e3o, e desde o final da d\u00e9cada de 1970, existia uma amplia\u00e7\u00e3o da Filmoteca Espanhola em Val\u00eancia, presidida na \u00e9poca por Luis Garc\u00eda Berlanga, dedicada quase exclusivamente \u00e0 exibi\u00e7\u00e3o de ciclos.", "site": "https://ivac.gva.es"}], "Gr\u00e9cia": [{"nome": "Arquivo de Filmes Gregos ( Taini\u00f3thiki, Atenas)", "descricao": "A Greek Film Archive Foundation \u00e9 uma institui\u00e7\u00e3o cultural sem fins lucrativos que visa pesquisar, coletar, preservar e promover o patrim\u00f4nio cinematogr\u00e1fico grego e mundial.O Arquivo Cinematogr\u00e1fico Grego \u00e9, desde 1983, membro regular da Federa\u00e7\u00e3o Internacional de Arquivos Cinematogr\u00e1ficos ( FIAF ), membro fundador da Associa\u00e7\u00e3o Europeia de Arquivos Cinematogr\u00e1ficos ( ACE ) e membro da Europa Cinemas . ", "site": "https://www.tainiothiki.gr"}, {"nome": "TainiothikiTis Ellados [Greek Film Archive] (Arquivo de Filmes Gregos)", "descricao": "Estabelecido em 1963 com um decreto real, o Greek Film Aarchive (Tainiothiki Tis Ellados) \u00e9 a \u00fanica institui\u00e7\u00e3o de patrim\u00f4nio cinematogr\u00e1fico da Gr\u00e9cia e tem uma cole\u00e7\u00e3o \u00fanica de filmes mudos gregos, bem como uma cole\u00e7\u00e3o consider\u00e1vel de cinejornais. Ele tamb\u00e9m tem uma cole\u00e7\u00e3o consider\u00e1vel de filmes falados, filmes de fic\u00e7\u00e3o e n\u00e3o fic\u00e7\u00e3o, bem como um grande n\u00famero de t\u00edtulos estrangeiros.", "site": "http://www.tainiothiki.gr/el/"}], "Hungria": [{"nome": " Arquivo Nacional de Cinema H\u00fangaro (Budapeste) :", "descricao": "O Arquivo Cinematogr\u00e1fico H\u00fangaro, fundado em 1957 e operando como uma cole\u00e7\u00e3o p\u00fablica desde 1992, tem a tarefa de preservar, conservar, pesquisar, restaurar e publicar o patrim\u00f4nio cinematogr\u00e1fico nacional e toda a documenta\u00e7\u00e3o relacionada. Como um campo especializado do Instituto Nacional de Cinema, a principal tarefa do Arquivo Cinematogr\u00e1fico \u00e9 distribuir acervo cinematogr\u00e1fico nacional nacional e internacionalmente e utiliz\u00e1-los na educa\u00e7\u00e3o p\u00fablica. Al\u00e9m dos desenvolvimentos cont\u00ednuos, garante a mais alta qualidade de preserva\u00e7\u00e3o, digitaliza\u00e7\u00e3o cont\u00ednua e restaura\u00e7\u00e3o do acervo.", "site": "https://filmarchiv.hu"}], "Noruega": [{"nome": "Biblioteca Nacional da Noruega \u2013 NFI ( Oslo ) ", "descricao": "O Instituto Noruegu\u00eas de Cinema \u00e9 a ag\u00eancia administrativa do estado na \u00e1rea de filmes e jogos e fornece subs\u00eddios para o desenvolvimento, produ\u00e7\u00e3o, lan\u00e7amento e dissemina\u00e7\u00e3o de filmes, s\u00e9ries e jogos.", "site": "https://www.nfi.no"}], "Reino Unido": [{"nome": "Instituto Brit\u00e2nico de Cinema (BFI) ( Londres ) ", "descricao": "Instituto Brit\u00e2nico de Cinema\nSomos uma institui\u00e7\u00e3o de caridade cultural, uma distribuidora de financiamento da Loteria Nacional e a principal organiza\u00e7\u00e3o do Reino Unido para cinema e imagem em movimento.\n\n", "site": "https://www.bfi.org.uk"}, {"nome": "North West Film Archive ( Manchester ) ", "descricao": " filmagens hist\u00f3ricas e filmes caseiros a cinejornais e an\u00fancios, encontramos, preservamos e compartilhamos mais de 50.000 itens de filmes e v\u00eddeos para uso p\u00fablico, educacional e profissional.\nN\u00f3s amamos filmes e como eles podem abrir uma janela para o passado e o presente de maneiras poderosas, comoventes e inesperadas.Parte do Manchester Met e sediado na parceria Archives+ da Biblioteca Central de Manchester, somos um recurso especializado dedicado a salvar e desenvolver a rica hist\u00f3ria filmada da nossa regi\u00e3o.", "site": "https://www.mmu.ac.uk/north-west-film-archive\u200b"}, {"nome": "Arquivo de Filmes de East Anglian", "descricao": "O East Anglian Film Archive \u00e9 o arquivo de filmes credenciado para a regi\u00e3o do Leste da Inglaterra (Bedfordshire, Cambridgeshire, Essex, Hertfordshire, Norfolk e Suffolk) .\nNossa miss\u00e3o \u00e9 inspirar as pessoas por meio dos filmes de arquivo exclusivos em nossas cole\u00e7\u00f5es. Nosso objetivo \u00e9 liderar o caminho na preserva\u00e7\u00e3o de imagens em movimento e usar a inova\u00e7\u00e3o tecnol\u00f3gica para preservar a heran\u00e7a cinematogr\u00e1fica da nossa regi\u00e3o para agora e para o futuro.\nNossa pequena equipe de especialistas preserva e fornece acesso aos filmes e programas de televis\u00e3o em nossas cole\u00e7\u00f5es.\nFazemos parte da Universidade de East Anglia e somos membros do Film Archives UK, a rede nacional de arquivos p\u00fablicos de filmes.", "site": "https://eafa.org.uk"}, {"nome": "Olympic Television Archive Bureau (OTAB)", "descricao": "O Olympic Television Archive Bureau (OTAB) est\u00e1 em uma posi\u00e7\u00e3o \u00fanica para gerenciar os processos comerciais de licenciamento de filmagens ol\u00edmpicas e os s\u00edmbolos associados em nome do Comit\u00ea Ol\u00edmpico Internacional (COI).", "site": "https://www.otab.com/"}], "S\u00e9rvia": [{"nome": "Jugoslovenska Kinoteka (Belgrado) ", "descricao": "O Arquivo Cinematogr\u00e1fico do Arquivo Cinematogr\u00e1fico Iugoslavo, como sua unidade organizacional b\u00e1sica, foi fundado quando a pr\u00f3pria institui\u00e7\u00e3o foi fundada em 1949.A principal atividade do Arquivo \u00e9 coletar, preservar e digitalizar principalmente material cinematogr\u00e1fico e, depois, outros objetos e documentos relacionados a filmes e materiais cinematogr\u00e1ficos.", "site": "https://www.kinoteka.org.rs"}], "Portugal": [{"nome": "Cinemateca Portuguesa \u2013 Museu do Cinema ", "descricao": "A Cinemateca Portuguesa-Museu do Cinema \u00e9 o organismo nacional, tutelado pelo Ministro da Cultura, que tem por miss\u00e3o a salvaguarda e a divulga\u00e7\u00e3o do patrim\u00f3nio cinematogr\u00e1fico. Foi fundada no in\u00edcio dos anos 50 por um dos pioneiros das cinematecas europeias, Manuel F\u00e9lix Ribeiro, e tornou-se uma institui\u00e7\u00e3o aut\u00f3noma em 1980. Desde 1956, a Cinemateca \u00e9 membro da Federa\u00e7\u00e3o Internacional dos Arquivos de Filmes (FIAF), criada em 1938, com o objectivo de promover a conserva\u00e7\u00e3o e o conhecimento do patrim\u00f3nio cinematogr\u00e1fico, conjugando os esfor\u00e7os dos mais importantes arquivos do mundo, e que conta actualmente com mais de 150 afiliados de 77 pa\u00edses. Tamb\u00e9m em 1956, foi inaugurada a primeira sala pr\u00f3pria da Cinemateca, dedicada \u00e0 sua actividade exibidora. Em 1996, a Cinemateca abriu um moderno centro de conserva\u00e7\u00e3o nos arredores de Lisboa, que \u00e9 actualmente a base de todas as actividades de preserva\u00e7\u00e3o, pesquisa t\u00e9cnica e acesso, incluindo o uso de novas tecnologias.", "site": "https://www.cinemateca.pt"}], "Rep\u00fablica Tcheca": [{"nome": "N\u00e1rodn\u00ed filmov\u00fd archiv (Arquivo Nacional de Filmes) (Rep\u00fablica Tcheca) Site:", "descricao": "O Arquivo Nacional de Cinema \u00e9 uma das principais institui\u00e7\u00f5es de mem\u00f3ria no ambiente nacional. Na rede internacional de arquivos cinematogr\u00e1ficos, atua consistentemente como um parceiro que promove uma pol\u00edtica aberta e solid\u00e1ria, esfor\u00e7ando-se para fortalecer todos os padr\u00f5es e la\u00e7os profissionais, independentemente do contexto geogr\u00e1fico ou dos contatos tradicionais. ", "site": "https://nfa.cz"}], "Caribe": [{"nome": "Cinemateca Nacional de Trinidad e Tobago (Trinidad e Tobago) ", "descricao": "A Trinidad and Tobago Film Company Limited (FilmTT) \u00e9 a ag\u00eancia nacional de cinema de Trinidad e Tobago. A FilmTT foi criada em 2006 para promover o desenvolvimento da ind\u00fastria cinematogr\u00e1fica do pa\u00ed", "site": "https://www.trinidadandtobagofilm.com/cinemateca-nacional"}], "EUA": [{"nome": "British Universities Film & Video Council (BUFVC)", "descricao": "Tornar a imagem em movimento um som t\u00e3o importante quanto a palavra escrita no ensino, aprendizagem e pesquisa acad\u00eamica. Acreditamos que a imagem em movimento e o som desempenham um papel crucial na educa\u00e7\u00e3o e na pesquisa. Ao incorporar esses elementos din\u00e2micos junto com a palavra escrita, nossos membros podem melhorar a compreens\u00e3o, atender a diversos estilos de aprendizagem e envolver a aten\u00e7\u00e3o. Por meio de meios audiovisuais, podemos transmitir emo\u00e7\u00f5es de forma eficaz, demonstrar habilidades pr\u00e1ticas e fornecer contexto valioso ao assunto.", "site": "http://bufvc.ac.uk/newsonscreen/search"}, {"nome": "O Film Detective", "descricao": "O Film Detective \u00e9 uma fonte completa de longas-metragens cl\u00e1ssicos, bem como de muitos cl\u00e1ssicos de filmes de culto e centenas de horas de TV cl\u00e1ssica das d\u00e9cadas de 1950 e 60 - com t\u00edtulos agora dispon\u00edveis em HD! Westerns cl\u00e1ssicos, terror, mist\u00e9rio, fam\u00edlia, artes marciais, filme noir, programa\u00e7\u00e3o religiosa, cl\u00e1ssicos de culto, sil\u00eancios, desenhos animados cl\u00e1ssicos, curtas, document\u00e1rios e muitos cl\u00e1ssicos perdidos raramente vistos. A cole\u00e7\u00e3o de mais de 3.000 t\u00edtulos do Film Detective est\u00e1 agora sendo remasterizada para as novas m\u00eddias de hoje. Todos os t\u00edtulos foram transferidos profissionalmente de elementos originais do filme e est\u00e3o dispon\u00edveis em ProRes, muitos deles em HD. Com arte original para a maioria dos t\u00edtulos, nossos t\u00edtulos est\u00e3o dispon\u00edveis para oportunidades de licenciamento em todo o mundo.", "site": "https://www.thefilmdetective.com/"}, {"nome": "A Cole\u00e7\u00e3o de Filmes e V\u00eddeos G. William Jones nas Bibliotecas da SMU", "descricao": "A Cole\u00e7\u00e3o de Filmes e V\u00eddeos G. William Jones nas Bibliotecas da SMU apoia as comunidades da Meadows School of the Arts, da Universidade e da preserva\u00e7\u00e3o e pesquisa global de imagens em movimento. Seu objetivo principal \u00e9 apoiar a educa\u00e7\u00e3o e a pesquisa por meio do estudo, preserva\u00e7\u00e3o e apresenta\u00e7\u00e3o de imagens em movimento. Para esse fim, a Cole\u00e7\u00e3o mant\u00e9m imagens em movimento em uma ampla variedade de formatos, exemplos de equipamentos relacionados, materiais impressos associados a imagens em movimento e uma instala\u00e7\u00e3o de armazenamento com controle clim\u00e1tico.", "site": "https://www.smu.edu/libraries/hamon/jones"}, {"nome": "Centro Nacional de Cinema Judaico", "descricao": "O Centro Nacional de Cinema Judaico \u00e9 um arquivo, distribuidor, programador e exibidor de filmes sem fins lucrativos, \u00fanico e independente. A miss\u00e3o cont\u00ednua do NCJF \u00e9 a coleta, preserva\u00e7\u00e3o e exibi\u00e7\u00e3o de filmes com valor art\u00edstico e educacional relevantes para a experi\u00eancia judaica e a divulga\u00e7\u00e3o desses materiais para o p\u00fablico mais amplo poss\u00edvel. A NCJF possui exclusivamente a maior cole\u00e7\u00e3o de filmes judaicos do mundo, fora de Israel. Os 15.000 rolos de longas-metragens, document\u00e1rios, cinejornais, filmes caseiros e filmes institucionais do Centro datam de 1903 at\u00e9 o presente.", "site": "https://jewishfilm.org/"}], "Holanda": [{"nome": "NetherlandsAudiovisual Archive (Niederlande)", "descricao": "No renovado Museu dos Media ir\u00e1 descobrir a influ\u00eancia dos media numa experi\u00eancia pessoal \u00fanica, mas Imagem & Som \u00e9 mais! Gostaria de ver nosso acervo, fazer um tour pelo arquivo ou participar de outra atividade? Confira esta vis\u00e3o geral do que mais h\u00e1 para fazer e planeje sua visita ideal!", "site": "https://www.beeldengeluid.nl/collectie"}]};
+
+        // Função para verificar o login
+        function verificarLogin() {
+            var username = document.getElementById("username").value;
+            var password = document.getElementById("password").value;
+            var loginError = document.getElementById("login-error");
+
+            if (username === "imagemdearquivo" && password === "1978") {
+                // Esconde o overlay de login
+                document.getElementById("login-overlay").style.display = "none";
+                // Mostra o mapa e os painéis
+                document.getElementById("map").style.display = "block";
+                document.getElementById("acervo-list").style.display = "block";
+                document.getElementById("acervo-detail").style.display = "block";
+            } else {
+                loginError.textContent = "Usuário ou senha incorretos!";
+            }
+        }
+
+        // Função para carregar os acervos de um país no painel da lista
+        function loadAcervos(pais) {
+            var listDiv = document.getElementById("acervo-list");
+            listDiv.innerHTML = "<h4>Acervos de " + pais + "</h4>";
+            if(acervos_data[pais]) {
+                acervos_data[pais].forEach(function(acervo) {
+                    var a = document.createElement("a");
+                    a.href = "#";
+                    a.textContent = acervo.nome;
+                    a.style.display = "block";
+                    a.style.marginBottom = "5px";
+                    a.onclick = function() {
+                        showAcervoDetail(acervo);
+                    };
+                    listDiv.appendChild(a);
+                });
+            } else {
+                listDiv.innerHTML += "<p>Nenhum acervo encontrado.</p>";
+            }
+        }
+
+        // Função para exibir os detalhes do acervo no painel de detalhes
+        function showAcervoDetail(acervo) {
+            var detailDiv = document.getElementById("acervo-detail");
+            detailDiv.innerHTML = "<h4>" + acervo.nome + "</h4>" +
+                                  "<p><b>Descrição:</b> " + acervo.descricao + "</p>" +
+                                  "<p><a href='" + acervo.site + "' target='_blank'>Visitar site</a></p>";
+
+            // Tenta carregar o iframe
+            var iframe = document.createElement('iframe');
+            iframe.src = acervo.site;
+            iframe.style.width = '100%';
+            iframe.style.height = '600px';
+            iframe.style.border = 'none';
+            
+            // Se não carregar, exibe a mensagem
+            iframe.onerror = function() {
+                detailDiv.innerHTML += "<p><strong>Este site não pode ser exibido aqui devido a restrições de segurança. Clique no link acima para visitar diretamente.</strong></p>";
+            };
+            
+            // Tenta adicionar o iframe
+            detailDiv.appendChild(iframe);
+        }
+        </script>
+    </body>
+    </html>
+    
+    
+            <div class="folium-map" id="map_dbb12d686361d032d4f09b3cecf561f2" ></div>
+        
+</body>
+<script>
+    
+    
+            var map_dbb12d686361d032d4f09b3cecf561f2 = L.map(
+                "map_dbb12d686361d032d4f09b3cecf561f2",
+                {
+                    center: [40.0, -30.0],
+                    crs: L.CRS.EPSG3857,
+                    ...{
+  "zoom": 3,
+  "zoomControl": true,
+  "preferCanvas": false,
+}
+
+                }
+            );
+
+            
+
+        
+    
+            var tile_layer_a991e609c7683485e5f01b60887ee2cd = L.tileLayer(
+                "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                {
+  "minZoom": 0,
+  "maxZoom": 19,
+  "maxNativeZoom": 19,
+  "noWrap": false,
+  "attribution": "\u0026copy; \u003ca href=\"https://www.openstreetmap.org/copyright\"\u003eOpenStreetMap\u003c/a\u003e contributors",
+  "subdomains": "abc",
+  "detectRetina": false,
+  "tms": false,
+  "opacity": 1,
+}
+
+            );
+        
+    
+            tile_layer_a991e609c7683485e5f01b60887ee2cd.addTo(map_dbb12d686361d032d4f09b3cecf561f2);
+        
+    
+            var marker_25627c3105a06679dd1671442b95841d = L.marker(
+                [46.603354, 1.888334],
+                {
+}
+            ).addTo(map_dbb12d686361d032d4f09b3cecf561f2);
+        
+    
+        var popup_cec829ac77cbdddab45b5518e0657b31 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_a01114a2108997d13c676a0e26809a06 = $(`<div id="html_a01114a2108997d13c676a0e26809a06" style="width: 100.0%; height: 100.0%;"><a href='#' onclick="loadAcervos('França'); return false;">Ver acervos de França</a></div>`)[0];
+                popup_cec829ac77cbdddab45b5518e0657b31.setContent(html_a01114a2108997d13c676a0e26809a06);
+            
+        
+
+        marker_25627c3105a06679dd1671442b95841d.bindPopup(popup_cec829ac77cbdddab45b5518e0657b31)
+        ;
+
+        
+    
+    
+            marker_25627c3105a06679dd1671442b95841d.bindTooltip(
+                `<div>
+                     França (13 acervo(s))
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var marker_c80fbf4a92b9a1b45c02bed94aefb91c = L.marker(
+                [41.87194, 12.56738],
+                {
+}
+            ).addTo(map_dbb12d686361d032d4f09b3cecf561f2);
+        
+    
+        var popup_d6f867b3d281bf18ccca2b7b362927a2 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_69a70b0b621bc571198b8670c584cde1 = $(`<div id="html_69a70b0b621bc571198b8670c584cde1" style="width: 100.0%; height: 100.0%;"><a href='#' onclick="loadAcervos('Itália'); return false;">Ver acervos de Itália</a></div>`)[0];
+                popup_d6f867b3d281bf18ccca2b7b362927a2.setContent(html_69a70b0b621bc571198b8670c584cde1);
+            
+        
+
+        marker_c80fbf4a92b9a1b45c02bed94aefb91c.bindPopup(popup_d6f867b3d281bf18ccca2b7b362927a2)
+        ;
+
+        
+    
+    
+            marker_c80fbf4a92b9a1b45c02bed94aefb91c.bindTooltip(
+                `<div>
+                     Itália (11 acervo(s))
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var marker_503f747e317e434c01f4da9fe726d7e2 = L.marker(
+                [51.1657, 10.4515],
+                {
+}
+            ).addTo(map_dbb12d686361d032d4f09b3cecf561f2);
+        
+    
+        var popup_5cf1a1dc3acf85e0bd848d29dd6ea612 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_c4c1e4e2c9a07930c518609b063c911b = $(`<div id="html_c4c1e4e2c9a07930c518609b063c911b" style="width: 100.0%; height: 100.0%;"><a href='#' onclick="loadAcervos('Alemanha'); return false;">Ver acervos de Alemanha</a></div>`)[0];
+                popup_5cf1a1dc3acf85e0bd848d29dd6ea612.setContent(html_c4c1e4e2c9a07930c518609b063c911b);
+            
+        
+
+        marker_503f747e317e434c01f4da9fe726d7e2.bindPopup(popup_5cf1a1dc3acf85e0bd848d29dd6ea612)
+        ;
+
+        
+    
+    
+            marker_503f747e317e434c01f4da9fe726d7e2.bindTooltip(
+                `<div>
+                     Alemanha (6 acervo(s))
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var marker_3f98a747787ecccff7d8bd63d29de30e = L.marker(
+                [56.2639, 9.5018],
+                {
+}
+            ).addTo(map_dbb12d686361d032d4f09b3cecf561f2);
+        
+    
+        var popup_a0aac510def652b8f810573f2cbb517b = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_7d82e23118c95f8e2639be967e082b3f = $(`<div id="html_7d82e23118c95f8e2639be967e082b3f" style="width: 100.0%; height: 100.0%;"><a href='#' onclick="loadAcervos('Dinamarca'); return false;">Ver acervos de Dinamarca</a></div>`)[0];
+                popup_a0aac510def652b8f810573f2cbb517b.setContent(html_7d82e23118c95f8e2639be967e082b3f);
+            
+        
+
+        marker_3f98a747787ecccff7d8bd63d29de30e.bindPopup(popup_a0aac510def652b8f810573f2cbb517b)
+        ;
+
+        
+    
+    
+            marker_3f98a747787ecccff7d8bd63d29de30e.bindTooltip(
+                `<div>
+                     Dinamarca (2 acervo(s))
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var marker_5517f1f566605f901690a41883531a89 = L.marker(
+                [22.3193, 114.1694],
+                {
+}
+            ).addTo(map_dbb12d686361d032d4f09b3cecf561f2);
+        
+    
+        var popup_36df1f07bd990067861436187c05a3ec = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_f9f2890f1876456e75952fdc810a02de = $(`<div id="html_f9f2890f1876456e75952fdc810a02de" style="width: 100.0%; height: 100.0%;"><a href='#' onclick="loadAcervos('Hong Kong'); return false;">Ver acervos de Hong Kong</a></div>`)[0];
+                popup_36df1f07bd990067861436187c05a3ec.setContent(html_f9f2890f1876456e75952fdc810a02de);
+            
+        
+
+        marker_5517f1f566605f901690a41883531a89.bindPopup(popup_36df1f07bd990067861436187c05a3ec)
+        ;
+
+        
+    
+    
+            marker_5517f1f566605f901690a41883531a89.bindTooltip(
+                `<div>
+                     Hong Kong (1 acervo(s))
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var marker_a0fabfd1cde19a837b52780b66972d74 = L.marker(
+                [53.1424, -7.6921],
+                {
+}
+            ).addTo(map_dbb12d686361d032d4f09b3cecf561f2);
+        
+    
+        var popup_e309e6b55416d73df253209ad361941b = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_66453f3da551ab285b4cbb7372a34070 = $(`<div id="html_66453f3da551ab285b4cbb7372a34070" style="width: 100.0%; height: 100.0%;"><a href='#' onclick="loadAcervos('Irlanda'); return false;">Ver acervos de Irlanda</a></div>`)[0];
+                popup_e309e6b55416d73df253209ad361941b.setContent(html_66453f3da551ab285b4cbb7372a34070);
+            
+        
+
+        marker_a0fabfd1cde19a837b52780b66972d74.bindPopup(popup_e309e6b55416d73df253209ad361941b)
+        ;
+
+        
+    
+    
+            marker_a0fabfd1cde19a837b52780b66972d74.bindTooltip(
+                `<div>
+                     Irlanda (2 acervo(s))
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var marker_9e9334808f570819a5436dc25499c304 = L.marker(
+                [50.8503, 4.3517],
+                {
+}
+            ).addTo(map_dbb12d686361d032d4f09b3cecf561f2);
+        
+    
+        var popup_b12ef50a243cd6b6bc8b14e635fac6bc = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_2ec493817a299da5535115548ce1e387 = $(`<div id="html_2ec493817a299da5535115548ce1e387" style="width: 100.0%; height: 100.0%;"><a href='#' onclick="loadAcervos('Bélgica'); return false;">Ver acervos de Bélgica</a></div>`)[0];
+                popup_b12ef50a243cd6b6bc8b14e635fac6bc.setContent(html_2ec493817a299da5535115548ce1e387);
+            
+        
+
+        marker_9e9334808f570819a5436dc25499c304.bindPopup(popup_b12ef50a243cd6b6bc8b14e635fac6bc)
+        ;
+
+        
+    
+    
+            marker_9e9334808f570819a5436dc25499c304.bindTooltip(
+                `<div>
+                     Bélgica (1 acervo(s))
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var marker_c5ecf010747d68f2696fe6e9ef7f8de5 = L.marker(
+                [40.4637, -3.7492],
+                {
+}
+            ).addTo(map_dbb12d686361d032d4f09b3cecf561f2);
+        
+    
+        var popup_4f1d0ec2552e0a9457a95ea2e3fec6c8 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_1dc5723e267c45b652e1ebe6692a294d = $(`<div id="html_1dc5723e267c45b652e1ebe6692a294d" style="width: 100.0%; height: 100.0%;"><a href='#' onclick="loadAcervos('Espanha'); return false;">Ver acervos de Espanha</a></div>`)[0];
+                popup_4f1d0ec2552e0a9457a95ea2e3fec6c8.setContent(html_1dc5723e267c45b652e1ebe6692a294d);
+            
+        
+
+        marker_c5ecf010747d68f2696fe6e9ef7f8de5.bindPopup(popup_4f1d0ec2552e0a9457a95ea2e3fec6c8)
+        ;
+
+        
+    
+    
+            marker_c5ecf010747d68f2696fe6e9ef7f8de5.bindTooltip(
+                `<div>
+                     Espanha (5 acervo(s))
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var marker_bbd475ab422461de433f7063afe1a175 = L.marker(
+                [39.0742, 21.8243],
+                {
+}
+            ).addTo(map_dbb12d686361d032d4f09b3cecf561f2);
+        
+    
+        var popup_6e046482e6ebd9edfb39d6c6aa67a740 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_1186fff3dfcbf31af7b259da7dca9973 = $(`<div id="html_1186fff3dfcbf31af7b259da7dca9973" style="width: 100.0%; height: 100.0%;"><a href='#' onclick="loadAcervos('Grécia'); return false;">Ver acervos de Grécia</a></div>`)[0];
+                popup_6e046482e6ebd9edfb39d6c6aa67a740.setContent(html_1186fff3dfcbf31af7b259da7dca9973);
+            
+        
+
+        marker_bbd475ab422461de433f7063afe1a175.bindPopup(popup_6e046482e6ebd9edfb39d6c6aa67a740)
+        ;
+
+        
+    
+    
+            marker_bbd475ab422461de433f7063afe1a175.bindTooltip(
+                `<div>
+                     Grécia (2 acervo(s))
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var marker_64ca7b1ded17c4c8546b5d4992983fe9 = L.marker(
+                [47.1625, 19.5033],
+                {
+}
+            ).addTo(map_dbb12d686361d032d4f09b3cecf561f2);
+        
+    
+        var popup_1b191b0ab23515b0e076cefff630259a = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_3bb0866ca68f3deebea05c1b8f9f1d81 = $(`<div id="html_3bb0866ca68f3deebea05c1b8f9f1d81" style="width: 100.0%; height: 100.0%;"><a href='#' onclick="loadAcervos('Hungria'); return false;">Ver acervos de Hungria</a></div>`)[0];
+                popup_1b191b0ab23515b0e076cefff630259a.setContent(html_3bb0866ca68f3deebea05c1b8f9f1d81);
+            
+        
+
+        marker_64ca7b1ded17c4c8546b5d4992983fe9.bindPopup(popup_1b191b0ab23515b0e076cefff630259a)
+        ;
+
+        
+    
+    
+            marker_64ca7b1ded17c4c8546b5d4992983fe9.bindTooltip(
+                `<div>
+                     Hungria (1 acervo(s))
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var marker_67a767e2cbfcd55fd92f2d1cbfb62e00 = L.marker(
+                [60.472, 8.4689],
+                {
+}
+            ).addTo(map_dbb12d686361d032d4f09b3cecf561f2);
+        
+    
+        var popup_d483bb4d381a0bb2dc4779856eae37f3 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_dd25f43614d4c75c084acdc1d2050e67 = $(`<div id="html_dd25f43614d4c75c084acdc1d2050e67" style="width: 100.0%; height: 100.0%;"><a href='#' onclick="loadAcervos('Noruega'); return false;">Ver acervos de Noruega</a></div>`)[0];
+                popup_d483bb4d381a0bb2dc4779856eae37f3.setContent(html_dd25f43614d4c75c084acdc1d2050e67);
+            
+        
+
+        marker_67a767e2cbfcd55fd92f2d1cbfb62e00.bindPopup(popup_d483bb4d381a0bb2dc4779856eae37f3)
+        ;
+
+        
+    
+    
+            marker_67a767e2cbfcd55fd92f2d1cbfb62e00.bindTooltip(
+                `<div>
+                     Noruega (1 acervo(s))
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var marker_3fb9c4f929c299fbcbb4e2d78471cf04 = L.marker(
+                [55.3781, -3.436],
+                {
+}
+            ).addTo(map_dbb12d686361d032d4f09b3cecf561f2);
+        
+    
+        var popup_9be01e394fdf673ec93120ab579e12a9 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_3dbcbe5cb6cc3f0d2b057588df3e67ed = $(`<div id="html_3dbcbe5cb6cc3f0d2b057588df3e67ed" style="width: 100.0%; height: 100.0%;"><a href='#' onclick="loadAcervos('Reino Unido'); return false;">Ver acervos de Reino Unido</a></div>`)[0];
+                popup_9be01e394fdf673ec93120ab579e12a9.setContent(html_3dbcbe5cb6cc3f0d2b057588df3e67ed);
+            
+        
+
+        marker_3fb9c4f929c299fbcbb4e2d78471cf04.bindPopup(popup_9be01e394fdf673ec93120ab579e12a9)
+        ;
+
+        
+    
+    
+            marker_3fb9c4f929c299fbcbb4e2d78471cf04.bindTooltip(
+                `<div>
+                     Reino Unido (4 acervo(s))
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var marker_c4c9a1971d2cf8dd3aab7e7457cb6b54 = L.marker(
+                [44.0165, 21.0059],
+                {
+}
+            ).addTo(map_dbb12d686361d032d4f09b3cecf561f2);
+        
+    
+        var popup_fc68517463b8ccbe4a641a48885566c9 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_71fe0b481fe499d6f1f13481663b0455 = $(`<div id="html_71fe0b481fe499d6f1f13481663b0455" style="width: 100.0%; height: 100.0%;"><a href='#' onclick="loadAcervos('Sérvia'); return false;">Ver acervos de Sérvia</a></div>`)[0];
+                popup_fc68517463b8ccbe4a641a48885566c9.setContent(html_71fe0b481fe499d6f1f13481663b0455);
+            
+        
+
+        marker_c4c9a1971d2cf8dd3aab7e7457cb6b54.bindPopup(popup_fc68517463b8ccbe4a641a48885566c9)
+        ;
+
+        
+    
+    
+            marker_c4c9a1971d2cf8dd3aab7e7457cb6b54.bindTooltip(
+                `<div>
+                     Sérvia (1 acervo(s))
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var marker_d8a320f14a3ef1e1e6af0334106cf7e1 = L.marker(
+                [39.3999, -8.2245],
+                {
+}
+            ).addTo(map_dbb12d686361d032d4f09b3cecf561f2);
+        
+    
+        var popup_a67c1bf9aa75643db2981dd94fdbb15f = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_9ed63d953e3b48885d8aae395fe71dce = $(`<div id="html_9ed63d953e3b48885d8aae395fe71dce" style="width: 100.0%; height: 100.0%;"><a href='#' onclick="loadAcervos('Portugal'); return false;">Ver acervos de Portugal</a></div>`)[0];
+                popup_a67c1bf9aa75643db2981dd94fdbb15f.setContent(html_9ed63d953e3b48885d8aae395fe71dce);
+            
+        
+
+        marker_d8a320f14a3ef1e1e6af0334106cf7e1.bindPopup(popup_a67c1bf9aa75643db2981dd94fdbb15f)
+        ;
+
+        
+    
+    
+            marker_d8a320f14a3ef1e1e6af0334106cf7e1.bindTooltip(
+                `<div>
+                     Portugal (1 acervo(s))
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var marker_6d0c098120aa0aad2a9c5e05fece9e99 = L.marker(
+                [49.8175, 15.473],
+                {
+}
+            ).addTo(map_dbb12d686361d032d4f09b3cecf561f2);
+        
+    
+        var popup_659f1168c180b39cfa95421cac22f4a5 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_0d41e1c02c0e7595c051abbb1ebd4f97 = $(`<div id="html_0d41e1c02c0e7595c051abbb1ebd4f97" style="width: 100.0%; height: 100.0%;"><a href='#' onclick="loadAcervos('República Tcheca'); return false;">Ver acervos de República Tcheca</a></div>`)[0];
+                popup_659f1168c180b39cfa95421cac22f4a5.setContent(html_0d41e1c02c0e7595c051abbb1ebd4f97);
+            
+        
+
+        marker_6d0c098120aa0aad2a9c5e05fece9e99.bindPopup(popup_659f1168c180b39cfa95421cac22f4a5)
+        ;
+
+        
+    
+    
+            marker_6d0c098120aa0aad2a9c5e05fece9e99.bindTooltip(
+                `<div>
+                     República Tcheca (1 acervo(s))
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var marker_6477a0ea51e29b7ca124352e016e368b = L.marker(
+                [15.0, -75.0],
+                {
+}
+            ).addTo(map_dbb12d686361d032d4f09b3cecf561f2);
+        
+    
+        var popup_379a7abb69b7f2ffd27e8858f570d141 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_954c8f49a5a75a5ba674cf817d1f3d12 = $(`<div id="html_954c8f49a5a75a5ba674cf817d1f3d12" style="width: 100.0%; height: 100.0%;"><a href='#' onclick="loadAcervos('Caribe'); return false;">Ver acervos de Caribe</a></div>`)[0];
+                popup_379a7abb69b7f2ffd27e8858f570d141.setContent(html_954c8f49a5a75a5ba674cf817d1f3d12);
+            
+        
+
+        marker_6477a0ea51e29b7ca124352e016e368b.bindPopup(popup_379a7abb69b7f2ffd27e8858f570d141)
+        ;
+
+        
+    
+    
+            marker_6477a0ea51e29b7ca124352e016e368b.bindTooltip(
+                `<div>
+                     Caribe (1 acervo(s))
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var marker_d961b147ceacbd455859cc268f79c5e9 = L.marker(
+                [37.0902, -95.7129],
+                {
+}
+            ).addTo(map_dbb12d686361d032d4f09b3cecf561f2);
+        
+    
+        var popup_30002dec925e1c2d58dbebfe9629e286 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_30db6228e9cc9b02970b70b01dd2109c = $(`<div id="html_30db6228e9cc9b02970b70b01dd2109c" style="width: 100.0%; height: 100.0%;"><a href='#' onclick="loadAcervos('EUA'); return false;">Ver acervos de EUA</a></div>`)[0];
+                popup_30002dec925e1c2d58dbebfe9629e286.setContent(html_30db6228e9cc9b02970b70b01dd2109c);
+            
+        
+
+        marker_d961b147ceacbd455859cc268f79c5e9.bindPopup(popup_30002dec925e1c2d58dbebfe9629e286)
+        ;
+
+        
+    
+    
+            marker_d961b147ceacbd455859cc268f79c5e9.bindTooltip(
+                `<div>
+                     EUA (4 acervo(s))
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var marker_26dfff4b1d67963234e98994082e2afa = L.marker(
+                [52.3784, 4.9009],
+                {
+}
+            ).addTo(map_dbb12d686361d032d4f09b3cecf561f2);
+        
+    
+        var popup_ac26acfcdb54f7e5125e20bb0d4a694c = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_ac844256dac4805163f14b942141dd6b = $(`<div id="html_ac844256dac4805163f14b942141dd6b" style="width: 100.0%; height: 100.0%;"><a href='#' onclick="loadAcervos('Holanda'); return false;">Ver acervos de Holanda</a></div>`)[0];
+                popup_ac26acfcdb54f7e5125e20bb0d4a694c.setContent(html_ac844256dac4805163f14b942141dd6b);
+            
+        
+
+        marker_26dfff4b1d67963234e98994082e2afa.bindPopup(popup_ac26acfcdb54f7e5125e20bb0d4a694c)
+        ;
+
+        
+    
+    
+            marker_26dfff4b1d67963234e98994082e2afa.bindTooltip(
+                `<div>
+                     Holanda (1 acervo(s))
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+</script>
+</html>
